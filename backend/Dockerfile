@@ -15,5 +15,7 @@ RUN pip install -r requirements.txt
 
 COPY . /app/
 
+RUN chmod +x start.sh
+
 EXPOSE 8001
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]
+CMD ["./start.sh"]

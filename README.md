@@ -180,6 +180,98 @@ Tests cover: JWT auth, plan create/save/submit lifecycle, elder approve/return, 
 - **Ethiopian Ge'ez calendar** — Today's date is displayed in the Ethiopic calendar (e.g. "19 ሚያዚያ 2018") on the ministry dashboard and plan/report wizard headers.
 - **Mobile responsive** — All three portals (Ministry, Elder, Admin) feature a collapsible sidebar with a hamburger menu on small screens. Tables scroll horizontally on narrow viewports. Wizard step indicators adapt to mobile with a progress bar and prev/next controls.
 
+---
+
+## Deploying to Production (Vercel + Railway)
+
+The recommended production stack is **Vercel** (Angular frontend) + **Railway** (Django backend + PostgreSQL + file storage).
+
+### 1. Backend — Railway
+
+#### a. Create a Railway project and add services
+
+1. Go to [railway.app](https://railway.app) → **New Project**
+2. Click **Deploy from GitHub repo** → select this repository → set **Root Directory** to `backend`
+3. Railway auto-detects the `Dockerfile` and builds with gunicorn (`start.sh`)
+4. In the same project, click **+ New** → **Database** → **Add PostgreSQL** — Railway injects `DATABASE_URL` automatically
+
+#### b. File storage
+
+Option 1 — **MinIO on Railway** (keep parity with local dev):
+- Click **+ New** → **Docker Image** → `minio/minio`
+- Set env vars `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, add a persistent volume at `/data`
+- Set startup command: `server /data --console-address :9001`
+
+Option 2 — **Cloudflare R2** or **AWS S3** (recommended for production):
+- Create a bucket and generate S3-compatible credentials
+- The MinIO client in `apps/documents/storage.py` is S3-compatible — just point it at the new endpoint
+
+#### c. Environment variables for the Railway backend service
+
+Set these in the Railway service's **Variables** tab:
+
+| Variable | Value |
+|---|---|
+| `DJANGO_SECRET_KEY` | A long random string |
+| `DJANGO_DEBUG` | `0` |
+| `DJANGO_ALLOWED_HOSTS` | `yourapp.up.railway.app` |
+| `DATABASE_URL` | Auto-injected by Railway PostgreSQL plugin |
+| `CORS_ALLOWED_ORIGINS` | `https://your-vercel-app.vercel.app` |
+| `MINIO_ENDPOINT` | Your MinIO or S3 endpoint (e.g. `your-bucket.r2.cloudflarestorage.com`) |
+| `MINIO_ACCESS_KEY` | Bucket access key |
+| `MINIO_SECRET_KEY` | Bucket secret key |
+| `MINIO_BUCKET` | Bucket name |
+| `MINIO_SECURE` | `1` (always true for cloud storage) |
+| `EMAIL_NOTIFICATIONS_ENABLED` | `1` (optional) |
+| `EMAIL_HOST` | Your SMTP host (e.g. `smtp.sendgrid.net`) |
+| `EMAIL_HOST_USER` | SMTP username |
+| `EMAIL_HOST_PASSWORD` | SMTP password |
+| `DEFAULT_FROM_EMAIL` | `noreply@yourdomain.com` |
+| `GUNICORN_WORKERS` | `2` (increase for higher traffic) |
+
+After deploying, note the public Railway URL (e.g. `https://myapp.up.railway.app`).
+
+---
+
+### 2. Frontend — Vercel
+
+#### a. Create a Vercel project
+
+1. Go to [vercel.com](https://vercel.com) → **New Project** → import this repository
+2. Set **Root Directory** to `frontend`
+3. Vercel picks up `vercel.json` automatically — no framework preset needed
+
+#### b. Environment variable for the Vercel project
+
+In the Vercel project **Settings → Environment Variables**, add:
+
+| Variable | Value |
+|---|---|
+| `API_BASE_URL` | `https://myapp.up.railway.app/api` (your Railway backend URL) |
+
+#### c. Deploy
+
+Click **Deploy**. Vercel runs:
+```
+sed -i "s|__API_BASE_URL__|$API_BASE_URL|g" src/environments/environment.prod.ts && npm run build
+```
+then serves `dist/plan-management-system/browser/` with SPA rewrites so Angular routing works on hard refresh.
+
+---
+
+### 3. First-run seeding (Railway)
+
+The production backend does **not** auto-seed demo data (`seed_demo` is local-only). After deploy:
+
+```bash
+# Open a Railway shell for the backend service
+railway run python manage.py createsuperuser
+```
+
+Then log in to `/admin/` and create ministries, fiscal years, and user accounts through the Django admin or the app's admin portal.
+
+---
+
 ## Notes
 
 - Multi-church / multi-tenant support is out of scope for this release.

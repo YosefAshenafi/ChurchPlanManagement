@@ -1,0 +1,7 @@
+{
+  "buildCommand": "sed -i \"s|__API_BASE_URL__|$API_BASE_URL|g\" src/environments/environment.prod.ts && npm run build",
+  "outputDirectory": "dist/plan-management-system/browser",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
