@@ -1,5 +1,6 @@
 import logging
 
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,10 +9,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.accounts.models import Role
+from apps.accounts.notifications import notify_plan_approved, notify_plan_returned, notify_plan_submitted
 from apps.accounts.permissions import IsAdminOrElder, IsMinistryLeader
 from apps.audit.models import AuditLog
 from apps.ministries.models import FiscalYear
 from .models import Plan, PlanStatus
+from .pdf_export import generate_plan_pdf
 from .serializers import PlanSaveSerializer, PlanSerializer
 
 logger = logging.getLogger(__name__)
@@ -96,6 +99,7 @@ class PlanViewSet(ModelViewSet):
             object_type="Plan",
             object_id=plan.pk,
         )
+        notify_plan_submitted(plan)
         logger.info("plan_submitted", extra={"plan_id": plan.pk})
         return Response(PlanSerializer(plan).data)
 
@@ -116,6 +120,7 @@ class PlanViewSet(ModelViewSet):
             object_id=plan.pk,
             detail={"comment": plan.review_comment},
         )
+        notify_plan_approved(plan)
         logger.info("plan_approved", extra={"plan_id": plan.pk})
         return Response(PlanSerializer(plan).data)
 
@@ -142,8 +147,23 @@ class PlanViewSet(ModelViewSet):
             object_id=plan.pk,
             detail={"comment": comment},
         )
+        notify_plan_returned(plan)
         logger.info("plan_returned", extra={"plan_id": plan.pk})
         return Response(PlanSerializer(plan).data)
+
+    @action(detail=True, methods=["get"], url_path="export-pdf")
+    def export_pdf(self, request, pk=None):
+        plan = self.get_object()
+        try:
+            pdf_bytes = generate_plan_pdf(plan)
+        except Exception as exc:
+            logger.error("plan_pdf_failed", extra={"plan_id": plan.pk, "error": str(exc)})
+            return Response({"detail": "PDF ማመንለጥ አተሳካ"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        ministry_slug = getattr(plan.ministry, "slug", str(plan.pk))
+        filename = f"plan_{ministry_slug}_{plan.fiscal_year}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
     def _assert_ministry_owner(self, user, plan: Plan):
         if user.role == Role.MINISTRY_LEADER and plan.ministry_id != user.ministry_id:

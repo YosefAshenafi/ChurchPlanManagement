@@ -37,4 +37,8 @@ export class PlanService {
   returnPlan(id: number, comment: string): Observable<Plan> {
     return this.http.post<Plan>(`${BASE}/${id}/return/`, { comment });
   }
+
+  exportPdf(id: number): Observable<Blob> {
+    return this.http.get(`${BASE}/${id}/export-pdf/`, { responseType: 'blob' });
+  }
 }

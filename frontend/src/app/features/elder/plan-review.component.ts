@@ -26,18 +26,28 @@ const STATUS_CLASS: Record<string, string> = {
 
       <!-- Header -->
       <div class="flex items-center gap-3 mb-6 flex-wrap">
-        <a routerLink="/elder" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+        <a routerLink="/elder" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0">
           <span class="material-icons text-lg">arrow_back</span>
         </a>
-        <div class="flex-1">
-          <h2 class="text-xl font-bold text-slate-800">{{ plan.ministry_name }}</h2>
-          <div class="flex items-center gap-2 mt-0.5">
+        <div class="flex-1 min-w-0">
+          <h2 class="text-xl font-bold text-slate-800 truncate">{{ plan.ministry_name }}</h2>
+          <div class="flex flex-wrap items-center gap-2 mt-0.5">
             <span class="text-slate-500 text-sm">{{ plan.fiscal_year_label }}</span>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border {{ statusClass(plan.status) }}">
               {{ statusAm(plan.status) }}
             </span>
           </div>
         </div>
+        <!-- PDF export -->
+        <button
+          (click)="exportPdf()"
+          [disabled]="exportingPdf"
+          class="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+        >
+          <span *ngIf="exportingPdf" class="loading loading-spinner loading-xs"></span>
+          <span *ngIf="!exportingPdf" class="material-icons text-base">picture_as_pdf</span>
+          <span class="hidden sm:inline">PDF ውርድ</span>
+        </button>
       </div>
 
       <!-- Narrative sections -->
@@ -189,6 +199,7 @@ export class PlanReviewComponent implements OnInit {
   plan: Plan | null = null;
   commentCtrl = new FormControl('');
   acting = false;
+  exportingPdf = false;
   readonly letters = ['ሀ', 'ለ', 'ሐ', 'መ', 'ሠ'];
 
   constructor(
@@ -236,6 +247,28 @@ export class PlanReviewComponent implements OnInit {
       error: err => {
         this.acting = false;
         this.toast.error(err?.error?.detail ?? 'ስህተት ተከስቷል');
+      },
+    });
+  }
+
+  exportPdf(): void {
+    if (!this.plan) return;
+    this.exportingPdf = true;
+    this.planService.exportPdf(this.plan.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `plan_${this.plan!.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.exportingPdf = false;
+      },
+      error: () => {
+        this.toast.error('PDF ውርድ አልተሳካም');
+        this.exportingPdf = false;
       },
     });
   }

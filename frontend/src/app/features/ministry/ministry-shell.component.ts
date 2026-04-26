@@ -1,17 +1,29 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
+import { NgIf } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-ministry-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgIf],
   template: `
     <div class="flex h-screen overflow-hidden bg-slate-50">
 
-      <!-- Sidebar -->
-      <aside class="w-64 flex-shrink-0 flex flex-col" style="background:#1E1B4B">
+      <!-- Mobile backdrop -->
+      <div
+        *ngIf="sidebarOpen()"
+        class="fixed inset-0 bg-black/50 z-20 lg:hidden"
+        (click)="sidebarOpen.set(false)"
+      ></div>
 
+      <!-- Sidebar -->
+      <aside
+        class="fixed lg:relative inset-y-0 left-0 z-30 w-64 flex-shrink-0 flex flex-col transition-transform duration-300 lg:translate-x-0"
+        [class.translate-x-0]="sidebarOpen()"
+        [class.-translate-x-full]="!sidebarOpen()"
+        style="background:#1E1B4B"
+      >
         <!-- Brand header -->
         <div class="px-5 pt-6 pb-5 border-b border-indigo-900">
           <div class="flex items-center gap-3 mb-3">
@@ -22,6 +34,13 @@ import { AuthService } from '../../core/services/auth.service';
               <p class="text-white font-bold text-sm leading-tight">22 ማዞሪያ</p>
               <p class="text-indigo-400 text-xs leading-tight">ዕቅድ አስተዳደር</p>
             </div>
+            <!-- Close button on mobile -->
+            <button
+              class="lg:hidden ml-auto p-1 text-indigo-400 hover:text-white"
+              (click)="sidebarOpen.set(false)"
+            >
+              <span class="material-icons text-lg">close</span>
+            </button>
           </div>
           <div class="bg-indigo-900/60 rounded-lg px-3 py-2 mt-2">
             <p class="text-white text-xs font-semibold truncate">{{ ministry() || 'ዘርፍ' }}</p>
@@ -36,6 +55,7 @@ import { AuthService } from '../../core/services/auth.service';
             routerLinkActive="!bg-indigo-600 !text-white"
             [routerLinkActiveOptions]="{exact:true}"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-indigo-300 hover:bg-indigo-900/80 hover:text-white transition-all text-sm font-medium"
+            (click)="sidebarOpen.set(false)"
           >
             <span class="material-icons text-[20px]">home</span>
             ዋና ገጽ
@@ -44,6 +64,7 @@ import { AuthService } from '../../core/services/auth.service';
             routerLink="/ministry/plan"
             routerLinkActive="!bg-indigo-600 !text-white"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-indigo-300 hover:bg-indigo-900/80 hover:text-white transition-all text-sm font-medium"
+            (click)="sidebarOpen.set(false)"
           >
             <span class="material-icons text-[20px]">assignment</span>
             ዓመታዊ ዕቅድ
@@ -63,14 +84,21 @@ import { AuthService } from '../../core/services/auth.service';
       </aside>
 
       <!-- Main area -->
-      <div class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-1 flex flex-col overflow-hidden min-w-0">
 
         <!-- Top bar -->
-        <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 flex-shrink-0 shadow-sm">
-          <h1 class="text-sm text-slate-500 font-medium">
-            <span class="text-slate-400">22 ማዞሪያ ሙሉ ወንጌል አጥቢያ</span>
-            <span class="mx-2 text-slate-300">/</span>
-            የዕቅድ አስተዳደር ሥርዓት
+        <header class="h-14 bg-white border-b border-slate-200 flex items-center px-4 flex-shrink-0 shadow-sm no-print">
+          <!-- Hamburger (mobile only) -->
+          <button
+            class="lg:hidden mr-3 p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            (click)="sidebarOpen.set(true)"
+          >
+            <span class="material-icons text-xl">menu</span>
+          </button>
+          <h1 class="text-sm text-slate-500 font-medium truncate">
+            <span class="text-slate-400 hidden sm:inline">22 ማዞሪያ ሙሉ ወንጌል አጥቢያ</span>
+            <span class="mx-2 text-slate-300 hidden sm:inline">/</span>
+            <span>የዕቅድ አስተዳደር ሥርዓት</span>
           </h1>
           <div class="ml-auto flex items-center gap-3">
             <span class="text-xs text-slate-500 hidden sm:block">{{ user()?.username }}</span>
@@ -81,7 +109,7 @@ import { AuthService } from '../../core/services/auth.service';
         </header>
 
         <!-- Page content -->
-        <main class="flex-1 overflow-y-auto p-6">
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6">
           <router-outlet />
         </main>
       </div>
@@ -89,6 +117,7 @@ import { AuthService } from '../../core/services/auth.service';
   `,
 })
 export class MinistryShellComponent {
+  sidebarOpen = signal(false);
   user = this.auth.currentUser;
   ministry = computed(() => this.user()?.ministry?.name_am ?? '');
   initials = computed(() => {

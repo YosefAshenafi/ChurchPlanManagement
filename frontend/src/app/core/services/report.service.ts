@@ -32,6 +32,10 @@ export class ReportService {
     return this.http.post<QuarterlyReport>(`${this.base}/${id}/submit/`, {});
   }
 
+  exportPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/export-pdf/`, { responseType: 'blob' });
+  }
+
   listWindows(ministryId?: number): Observable<{ results: ReportWindow[] }> {
     const params = ministryId ? `?ministry=${ministryId}` : '';
     return this.http.get<{ results: ReportWindow[] }>(`${this.windowBase}/${params}`);

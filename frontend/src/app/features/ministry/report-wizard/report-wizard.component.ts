@@ -5,6 +5,7 @@ import { NgIf, NgFor, DatePipe } from '@angular/common';
 import { Subscription, interval, switchMap } from 'rxjs';
 import { PlanService } from '../../../core/services/plan.service';
 import { ReportService } from '../../../core/services/report.service';
+import { EthiopicDateService } from '../../../core/services/ethiopic-date.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Plan, QuarterlyReport } from '../../../core/models';
 
@@ -27,12 +28,14 @@ const STEPS = [
     <div class="max-w-4xl mx-auto">
 
       <!-- Page header -->
-      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div class="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <h2 class="text-xl font-bold text-slate-800">{{ quarterLabel }} ሩብ ዓመት ሪፖርት</h2>
-          <p class="text-slate-500 text-sm mt-0.5">Quarterly Report</p>
+          <p class="text-slate-500 text-xs mt-0.5 flex items-center gap-1">
+            <span class="material-icons text-xs">event</span>{{ todayEthiopic }}
+          </p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2">
           <span *ngIf="lastSaved" class="text-xs text-emerald-600 flex items-center gap-1">
             <span class="material-icons text-xs">check_circle</span>
             ተቀምጧል {{ lastSaved | date:'HH:mm' }}
@@ -44,7 +47,18 @@ const STEPS = [
           >
             <span *ngIf="saving" class="loading loading-spinner loading-xs"></span>
             <span *ngIf="!saving" class="material-icons text-base">save</span>
-            ረቂቅ አስቀምጥ
+            <span class="hidden sm:inline">ረቂቅ አስቀምጥ</span>
+          </button>
+          <!-- PDF export when submitted -->
+          <button
+            *ngIf="report && report.status === 'submitted'"
+            (click)="exportPdf()"
+            [disabled]="exportingPdf"
+            class="btn btn-sm btn-outline border-slate-300 text-slate-600 hover:bg-slate-50 gap-1 disabled:opacity-40"
+          >
+            <span *ngIf="exportingPdf" class="loading loading-spinner loading-xs"></span>
+            <span *ngIf="!exportingPdf" class="material-icons text-base">picture_as_pdf</span>
+            <span class="hidden sm:inline">PDF ውርድ</span>
           </button>
         </div>
       </div>
@@ -64,8 +78,29 @@ const STEPS = [
       <div *ngIf="report">
 
         <!-- Step progress -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6">
-          <div class="flex items-center gap-1 overflow-x-auto pb-1">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-5 mb-6">
+          <!-- Mobile progress -->
+          <div class="flex items-center justify-between mb-3 sm:hidden">
+            <span class="text-sm font-semibold text-indigo-700">
+              {{ currentStep + 1 }} / {{ steps.length }}. {{ steps[currentStep] }}
+            </span>
+            <div class="flex gap-1">
+              <button (click)="prevStep()" [disabled]="currentStep === 0"
+                class="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">
+                <span class="material-icons text-lg">chevron_left</span>
+              </button>
+              <button (click)="nextStep()" [disabled]="currentStep === maxStep"
+                class="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">
+                <span class="material-icons text-lg">chevron_right</span>
+              </button>
+            </div>
+          </div>
+          <div class="sm:hidden h-1.5 bg-slate-100 rounded-full mb-1">
+            <div class="h-1.5 bg-indigo-600 rounded-full transition-all"
+              [style.width.%]="((currentStep + 1) / steps.length) * 100"></div>
+          </div>
+          <!-- Desktop dots -->
+          <div class="hidden sm:flex items-center gap-1 overflow-x-auto pb-1">
             <ng-container *ngFor="let s of steps; let i = index">
               <button
                 (click)="goToStep(i)"
@@ -86,7 +121,7 @@ const STEPS = [
               ></div>
             </ng-container>
           </div>
-          <p class="text-sm font-semibold text-indigo-700 mt-3">
+          <p class="hidden sm:block text-sm font-semibold text-indigo-700 mt-3">
             {{ currentStep + 1 }}. {{ steps[currentStep] }}
           </p>
         </div>
@@ -288,8 +323,10 @@ export class ReportWizardComponent implements OnInit, OnDestroy {
   error = '';
   saving = false;
   submitting = false;
+  exportingPdf = false;
   lastSaved: Date | null = null;
   isReadOnly = false;
+  todayEthiopic = '';
 
   currentStep = 0;
   readonly steps = STEPS;
@@ -308,11 +345,13 @@ export class ReportWizardComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private planService: PlanService,
     private reportService: ReportService,
+    private ethiopicDate: EthiopicDateService,
     private toast: ToastService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.todayEthiopic = this.ethiopicDate.format(new Date());
     this.quarter = Number(this.route.snapshot.paramMap.get('quarter'));
     this._initForms();
     this.planService.list().subscribe({
@@ -442,5 +481,27 @@ export class ReportWizardComponent implements OnInit, OnDestroy {
       ...this.narrativeForm.getRawValue(),
       activity_progress: this.progressForm.getRawValue(),
     };
+  }
+
+  exportPdf(): void {
+    if (!this.report) return;
+    this.exportingPdf = true;
+    this.reportService.exportPdf(this.report.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report_q${this.quarter}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.exportingPdf = false;
+      },
+      error: () => {
+        this.toast.error('PDF ውርድ አልተሳካም');
+        this.exportingPdf = false;
+      },
+    });
   }
 }

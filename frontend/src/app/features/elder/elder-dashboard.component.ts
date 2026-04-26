@@ -71,36 +71,39 @@ const QUARTER_AM = ['', 'አንደኛ', 'ሁለተኛ', 'ሦስተኛ', 'አራ�
           <p class="text-slate-500 text-sm">ምንም ዕቅድ አልቀረበም</p>
         </div>
 
-        <table *ngIf="!loading && plans.length > 0" class="w-full">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ዘርፍ</th>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ዓ/ም</th>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ሁኔታ</th>
-              <th class="px-6 py-3"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let p of plans" class="hover:bg-slate-50 transition-colors">
-              <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ p.ministry_name }}</td>
-              <td class="px-6 py-4 text-sm text-slate-600">{{ p.fiscal_year_label }}</td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border {{ statusClass(p.status) }}">
-                  {{ statusAm(p.status) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-right">
-                <a
-                  [routerLink]="['/elder/plan', p.id]"
-                  class="inline-flex items-center gap-1.5 text-sm text-green-700 hover:text-green-900 font-medium transition-colors"
-                >
-                  <span class="material-icons text-base">visibility</span>
-                  ይመልከቱ
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Desktop table -->
+        <div class="overflow-x-auto">
+          <table *ngIf="!loading && plans.length > 0" class="w-full min-w-[500px]">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ዘርፍ</th>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden sm:table-cell">ዓ/ም</th>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ሁኔታ</th>
+                <th class="px-4 sm:px-6 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let p of plans" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 sm:px-6 py-4 text-sm font-medium text-slate-800">{{ p.ministry_name }}</td>
+                <td class="px-4 sm:px-6 py-4 text-sm text-slate-600 hidden sm:table-cell">{{ p.fiscal_year_label }}</td>
+                <td class="px-4 sm:px-6 py-4">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border {{ statusClass(p.status) }}">
+                    {{ statusAm(p.status) }}
+                  </span>
+                </td>
+                <td class="px-4 sm:px-6 py-4 text-right">
+                  <a
+                    [routerLink]="['/elder/plan', p.id]"
+                    class="inline-flex items-center gap-1.5 text-sm text-green-700 hover:text-green-900 font-medium transition-colors"
+                  >
+                    <span class="material-icons text-base">visibility</span>
+                    <span class="hidden sm:inline">ይመልከቱ</span>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Report windows tab -->
@@ -109,45 +112,47 @@ const QUARTER_AM = ['', 'አንደኛ', 'ሁለተኛ', 'ሦስተኛ', 'አራ�
           <span class="loading loading-spinner loading-md text-green-600"></span>
         </div>
 
-        <table *ngIf="!windowsLoading" class="w-full">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ዘርፍ</th>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ሩብ ዓመት</th>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ሁኔታ</th>
-              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ክፍት?</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let w of windows" class="hover:bg-slate-50 transition-colors">
-              <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ w.ministry_name }}</td>
-              <td class="px-6 py-4 text-sm text-slate-600">{{ quarterAm(w.quarter) }}</td>
-              <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                  [class.bg-green-100]="w.is_open"
-                  [class.text-green-700]="w.is_open"
-                  [class.bg-slate-100]="!w.is_open"
-                  [class.text-slate-500]="!w.is_open"
-                >
-                  <span class="material-icons text-xs">{{ w.is_open ? 'lock_open' : 'lock' }}</span>
-                  {{ w.is_open ? 'ክፍት' : 'ዝግ' }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    [checked]="w.is_open"
-                    (change)="toggleWindow(w)"
-                    class="sr-only peer"
-                  />
-                  <div class="w-11 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table *ngIf="!windowsLoading" class="w-full min-w-[480px]">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ዘርፍ</th>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ሩብ ዓመት</th>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden sm:table-cell">ሁኔታ</th>
+                <th class="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">ክፍት?</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let w of windows" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 sm:px-6 py-4 text-sm font-medium text-slate-800">{{ w.ministry_name }}</td>
+                <td class="px-4 sm:px-6 py-4 text-sm text-slate-600">{{ quarterAm(w.quarter) }}</td>
+                <td class="px-4 sm:px-6 py-4 hidden sm:table-cell">
+                  <span
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                    [class.bg-green-100]="w.is_open"
+                    [class.text-green-700]="w.is_open"
+                    [class.bg-slate-100]="!w.is_open"
+                    [class.text-slate-500]="!w.is_open"
+                  >
+                    <span class="material-icons text-xs">{{ w.is_open ? 'lock_open' : 'lock' }}</span>
+                    {{ w.is_open ? 'ክፍት' : 'ዝግ' }}
+                  </span>
+                </td>
+                <td class="px-4 sm:px-6 py-4">
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [checked]="w.is_open"
+                      (change)="toggleWindow(w)"
+                      class="sr-only peer"
+                    />
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                  </label>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div *ngIf="!windowsLoading && windows.length === 0" class="flex flex-col items-center justify-center py-16">
           <p class="text-slate-500 text-sm">ምንም መስኮት አልተገኘም</p>

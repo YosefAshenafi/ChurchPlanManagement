@@ -172,10 +172,14 @@ Tests cover: JWT auth, plan create/save/submit lifecycle, elder approve/return, 
 
 ---
 
-## Known Limitations (v1)
+## Implemented Features
 
-- PDF export of plans and reports is not yet implemented (v2)
-- Email notifications are not configured in development (SMTP stub only)
-- Document presigned download URLs expire after 1 hour
-- Ethiopian Ge'ez calendar display uses Gregorian dates internally; calendar conversion is a v2 feature
-- Multi-church / multi-tenant support is out of scope for this release
+- **PDF export** — Plans and reports can be downloaded as PDF via the "PDF ውርድ" button. The server generates the PDF with ReportLab; the browser downloads it automatically.
+- **Email notifications** — Django email backend is wired to plan/report lifecycle events (submit, approve, return). Configure SMTP via `.env` (see Environment Variables). In development the console backend logs emails to stdout; set `EMAIL_NOTIFICATIONS_ENABLED=1` to activate delivery.
+- **Extended document URLs** — Presigned MinIO download URLs now default to 7 days (configurable via `DOCUMENT_URL_EXPIRY` in `.env`).
+- **Ethiopian Ge'ez calendar** — Today's date is displayed in the Ethiopic calendar (e.g. "19 ሚያዚያ 2018") on the ministry dashboard and plan/report wizard headers.
+- **Mobile responsive** — All three portals (Ministry, Elder, Admin) feature a collapsible sidebar with a hamburger menu on small screens. Tables scroll horizontally on narrow viewports. Wizard step indicators adapt to mobile with a progress bar and prev/next controls.
+
+## Notes
+
+- Multi-church / multi-tenant support is out of scope for this release.

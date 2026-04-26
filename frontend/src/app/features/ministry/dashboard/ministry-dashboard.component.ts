@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { NgIf, NgFor, DatePipe } from '@angular/common';
 import { PlanService } from '../../../core/services/plan.service';
 import { ReportService } from '../../../core/services/report.service';
+import { EthiopicDateService } from '../../../core/services/ethiopic-date.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Plan, QuarterlyReport } from '../../../core/models';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -31,6 +33,11 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
     <div class="mb-6">
       <h2 class="text-xl font-bold text-slate-800">ዋና ገጽ</h2>
       <p class="text-slate-500 text-sm mt-0.5">የዘርፍዎን ዕቅድ እና ሪፖርቶች ይከታተሉ</p>
+      <!-- Ethiopian date display -->
+      <p class="text-indigo-600 text-xs font-medium mt-1 flex items-center gap-1">
+        <span class="material-icons text-xs">event</span>
+        {{ todayEthiopic }}
+      </p>
     </div>
 
     <!-- Loading skeleton -->
@@ -43,8 +50,8 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
 
     <!-- Annual Plan card -->
     <div *ngIf="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <div class="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center">
+      <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <div class="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
           <span class="material-icons text-indigo-600 text-lg">assignment</span>
         </div>
         <div>
@@ -53,7 +60,7 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
         </div>
       </div>
 
-      <div class="p-6">
+      <div class="p-4 sm:p-6">
         <ng-container *ngIf="currentPlan; else noPlan">
           <!-- Plan meta -->
           <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -81,15 +88,29 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
             ተቀምጧል: {{ currentPlan.last_saved_at | date:'medium' }}
           </p>
 
-          <a
-            routerLink="/ministry/plan"
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
-          >
-            <span class="material-icons text-base">
-              {{ currentPlan.status === 'draft' || currentPlan.status === 'returned' ? 'edit' : 'visibility' }}
-            </span>
-            {{ currentPlan.status === 'draft' || currentPlan.status === 'returned' ? 'ዕቅዱን ቀጥል' : 'ዕቅዱን ይመልከቱ' }}
-          </a>
+          <!-- Action buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <a
+              routerLink="/ministry/plan"
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            >
+              <span class="material-icons text-base">
+                {{ currentPlan.status === 'draft' || currentPlan.status === 'returned' ? 'edit' : 'visibility' }}
+              </span>
+              {{ currentPlan.status === 'draft' || currentPlan.status === 'returned' ? 'ዕቅዱን ቀጥል' : 'ዕቅዱን ይመልከቱ' }}
+            </a>
+            <!-- PDF Export -->
+            <button
+              *ngIf="currentPlan.status === 'approved' || currentPlan.status === 'submitted'"
+              (click)="exportPlanPdf()"
+              [disabled]="exportingPdf"
+              class="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              <span *ngIf="!exportingPdf" class="material-icons text-base">picture_as_pdf</span>
+              <span *ngIf="exportingPdf" class="loading loading-spinner loading-xs"></span>
+              PDF ውርድ
+            </button>
+          </div>
         </ng-container>
 
         <ng-template #noPlan>
@@ -112,8 +133,8 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
 
     <!-- Quarterly Reports -->
     <div *ngIf="!loading && currentPlan?.status === 'approved'" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <div class="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center">
+      <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
           <span class="material-icons text-emerald-600 text-lg">bar_chart</span>
         </div>
         <div>
@@ -122,7 +143,7 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
         </div>
       </div>
 
-      <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div *ngFor="let q of [1,2,3,4]" class="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition-all group">
           <div class="flex items-center gap-2 mb-3">
             <div class="w-8 h-8 bg-indigo-50 group-hover:bg-indigo-100 rounded-lg flex items-center justify-center transition-colors">
@@ -138,13 +159,23 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
           </div>
           <p *ngIf="!reportStatus(q)" class="text-xs text-slate-400 mb-3">ሪፖርት አልቀረበም</p>
 
-          <a
-            [routerLink]="['/ministry/report', q]"
-            class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-          >
-            <span class="material-icons text-sm">open_in_new</span>
-            ሪፖርት አዘጋጅ
-          </a>
+          <div class="flex flex-wrap gap-2">
+            <a
+              [routerLink]="['/ministry/report', q]"
+              class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            >
+              <span class="material-icons text-sm">open_in_new</span>
+              ሪፖርት አዘጋጅ
+            </a>
+            <button
+              *ngIf="reportId(q) && (reportStatus(q) === 'submitted' || reportStatus(q) === 'approved')"
+              (click)="exportReportPdf(q)"
+              class="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors"
+            >
+              <span class="material-icons text-sm">picture_as_pdf</span>
+              PDF
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -154,14 +185,19 @@ export class MinistryDashboardComponent implements OnInit {
   currentPlan: Plan | null = null;
   reports: QuarterlyReport[] = [];
   loading = true;
+  exportingPdf = false;
+  todayEthiopic = '';
   readonly QUARTER_LABELS = QUARTER_LABELS;
 
   constructor(
     private planService: PlanService,
     private reportService: ReportService,
+    private ethiopicDate: EthiopicDateService,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
+    this.todayEthiopic = this.ethiopicDate.format(new Date());
     this.planService.list().subscribe({
       next: res => {
         this.currentPlan = res.results[0] ?? null;
@@ -182,5 +218,44 @@ export class MinistryDashboardComponent implements OnInit {
 
   reportStatus(q: number): string | null {
     return this.reports.find(r => r.quarter === q)?.status ?? null;
+  }
+
+  reportId(q: number): number | null {
+    return this.reports.find(r => r.quarter === q)?.id ?? null;
+  }
+
+  exportPlanPdf(): void {
+    if (!this.currentPlan) return;
+    this.exportingPdf = true;
+    this.planService.exportPdf(this.currentPlan.id).subscribe({
+      next: blob => {
+        this._downloadBlob(blob, `plan_${this.currentPlan!.id}.pdf`);
+        this.exportingPdf = false;
+      },
+      error: () => {
+        this.toast.error('PDF ውርድ አልተሳካም');
+        this.exportingPdf = false;
+      },
+    });
+  }
+
+  exportReportPdf(q: number): void {
+    const id = this.reportId(q);
+    if (!id) return;
+    this.reportService.exportPdf(id).subscribe({
+      next: blob => this._downloadBlob(blob, `report_q${q}.pdf`),
+      error: () => this.toast.error('PDF ውርድ አልተሳካም'),
+    });
+  }
+
+  private _downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }

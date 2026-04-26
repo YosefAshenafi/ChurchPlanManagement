@@ -166,6 +166,22 @@ LOGGING = {
     },
 }
 
+# Email / SMTP configuration
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@22church.local")
+EMAIL_NOTIFICATIONS_ENABLED = env.bool("EMAIL_NOTIFICATIONS_ENABLED", default=False)
+
+# Document presigned URL lifetime (seconds); default 7 days
+DOCUMENT_URL_EXPIRY = env.int("DOCUMENT_URL_EXPIRY", default=604800)
+
 # File upload limits — 25 MB per file
 DATA_UPLOAD_MAX_MEMORY_SIZE = 26_214_400
 FILE_UPLOAD_MAX_MEMORY_SIZE = 26_214_400

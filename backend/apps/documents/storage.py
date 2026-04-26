@@ -38,8 +38,10 @@ def upload_file(file_obj, original_name: str, content_type: str) -> str:
     return key
 
 
-def presigned_url(key: str, expires: int = 3600) -> str:
-    """Generate a pre-signed download URL."""
+def presigned_url(key: str, expires: int | None = None) -> str:
+    """Generate a pre-signed download URL. Expiry defaults to DOCUMENT_URL_EXPIRY (7 days)."""
+    if expires is None:
+        expires = getattr(settings, "DOCUMENT_URL_EXPIRY", 604800)
     return _client().generate_presigned_url(
         "get_object",
         Params={"Bucket": settings.MINIO_BUCKET, "Key": key},

@@ -8,6 +8,22 @@ html, body {
   font-family: 'Noto Sans Ethiopic', sans-serif;
 }
 
+// Mobile: prevent horizontal overflow
+* { box-sizing: border-box; }
+body { overflow-x: hidden; }
+
+// Print: hide navigation, show only content
+@media print {
+  aside, header, nav, .no-print, .btn, button:not(.print-visible) {
+    display: none !important;
+  }
+  body, html { height: auto; overflow: visible; }
+  .print-container { display: block !important; }
+  main { padding: 0 !important; overflow: visible !important; }
+  .bg-white { background: white !important; }
+  * { box-shadow: none !important; }
+}
+
 // Ensure material-icons font renders correctly without the Material CSS
 .material-icons {
   font-family: 'Material Icons';

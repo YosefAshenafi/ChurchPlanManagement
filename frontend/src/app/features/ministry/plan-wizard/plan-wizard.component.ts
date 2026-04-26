@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { PlanService } from '../../../core/services/plan.service';
+import { EthiopicDateService } from '../../../core/services/ethiopic-date.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Plan } from '../../../core/models';
 
@@ -27,8 +28,10 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   plan: Plan | null = null;
   saving = false;
   submitting = false;
+  exportingPdf = false;
   lastSaved: Date | null = null;
   isReadOnly = false;
+  todayEthiopic = '';
 
   currentStep = 0;
   readonly steps = STEPS;
@@ -44,12 +47,14 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private planService: PlanService,
+    private ethiopicDate: EthiopicDateService,
     private toast: ToastService,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.todayEthiopic = this.ethiopicDate.format(new Date());
     this._initForms();
     this.planService.list().subscribe(res => {
       if (res.results.length > 0) {
@@ -276,4 +281,26 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
     return this.plan?.status === 'draft' || this.plan?.status === 'returned';
   }
   get canSubmit(): boolean { return this.canEdit; }
+
+  exportPdf(): void {
+    if (!this.plan) return;
+    this.exportingPdf = true;
+    this.planService.exportPdf(this.plan.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `plan_${this.plan!.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.exportingPdf = false;
+      },
+      error: () => {
+        this.toast.error('PDF ውርድ አልተሳካም');
+        this.exportingPdf = false;
+      },
+    });
+  }
 }

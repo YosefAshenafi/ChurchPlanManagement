@@ -1,17 +1,21 @@
 import logging
 
+from django.http import HttpResponse
 from django.utils import timezone
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.accounts.models import Role
+from apps.accounts.notifications import notify_report_submitted
 from apps.accounts.permissions import IsMinistryLeader
 from apps.audit.models import AuditLog
 from apps.ministries.models import ReportWindow
 from apps.plans.models import Plan, PlanStatus
 from .models import QuarterlyReport, ReportStatus
+from .pdf_export import generate_report_pdf
 from .serializers import QuarterlyReportSerializer, ReportSaveSerializer
 
 logger = logging.getLogger(__name__)
@@ -91,8 +95,23 @@ class QuarterlyReportViewSet(ModelViewSet):
             object_type="QuarterlyReport",
             object_id=report.pk,
         )
+        notify_report_submitted(report)
         logger.info("report_submitted", extra={"report_id": report.pk})
         return Response(QuarterlyReportSerializer(report).data)
+
+    @action(detail=True, methods=["get"], url_path="export-pdf")
+    def export_pdf(self, request, pk=None):
+        report = self.get_object()
+        try:
+            pdf_bytes = generate_report_pdf(report)
+        except Exception as exc:
+            logger.error("report_pdf_failed", extra={"report_id": report.pk, "error": str(exc)})
+            return Response({"detail": "PDF ማመንለጥ አተሳካ"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        ministry_slug = getattr(report.plan.ministry, "slug", str(report.plan.pk))
+        filename = f"report_{ministry_slug}_q{report.quarter}_{report.plan.fiscal_year}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
     def _get_own_approved_plan(self, user, plan_id) -> Plan:
         try:
