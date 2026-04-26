@@ -27,7 +27,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,10 +65,11 @@ services:
       - ./backend:/app
     ports:
       - "8001:8001"
+    stop_grace_period: 5s
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py seed_demo &&
-             python manage.py runserver 0.0.0.0:8001"
+             exec python manage.py runserver 0.0.0.0:8001"
 
   frontend:
     build:
@@ -78,11 +79,12 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/src:/app/src
     ports:
       - "4300:4300"
-    command: sh -c "npm install --no-audit --no-fund && npm run start -- --host 0.0.0.0 --port 4300 --poll 2000"
+    stop_grace_period: 5s
+    stop_signal: SIGKILL
+    command: npm run start -- --host 0.0.0.0 --port 4300 --poll 2000
 
 volumes:
   db_data:
