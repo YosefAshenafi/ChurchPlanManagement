@@ -1,0 +1,17 @@
+// All styles handled via Tailwind/DaisyUI utility classes in the template.
+// Only component-specific overrides go here.
+
+:host {
+  display: block;
+}
+
+// Smooth textarea resize
+textarea {
+  min-height: 80px;
+}
+
+// Budget table inline inputs
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
