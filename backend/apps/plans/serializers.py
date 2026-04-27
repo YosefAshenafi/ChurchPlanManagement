@@ -70,6 +70,18 @@ class PlanSerializer(serializers.ModelSerializer):
     risks = PlanRiskSerializer(many=True, read_only=True)
     ministry_name = serializers.CharField(source="ministry.name_am", read_only=True)
     fiscal_year_label = serializers.CharField(source="fiscal_year.label", read_only=True)
+    reviewed_by_name = serializers.SerializerMethodField()
+    reviewed_by_username = serializers.SerializerMethodField()
+
+    def get_reviewed_by_name(self, obj):
+        if obj.reviewed_by:
+            return obj.reviewed_by.full_name_am or obj.reviewed_by.username
+        return None
+
+    def get_reviewed_by_username(self, obj):
+        if obj.reviewed_by:
+            return obj.reviewed_by.username
+        return None
 
     class Meta:
         model = Plan
@@ -78,6 +90,7 @@ class PlanSerializer(serializers.ModelSerializer):
             "status", "introduction", "general_objective",
             "assumptions", "monitoring_evaluation",
             "review_comment", "submitted_at", "reviewed_at",
+            "reviewed_by_name", "reviewed_by_username",
             "last_saved_at", "created_at",
             "goals", "budget_lines", "budget_allocations",
             "schedule_entries", "risks",

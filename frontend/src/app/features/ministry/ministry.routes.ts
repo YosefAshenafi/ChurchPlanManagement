@@ -27,6 +27,16 @@ export const MINISTRY_ROUTES: Routes = [
             m => m.ReportWizardComponent
           ),
       },
+      {
+        path: 'history',
+        loadComponent: () =>
+          import('./ministry-history.component').then(m => m.MinistryHistoryComponent),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('../shared/profile-settings.component').then(m => m.ProfileSettingsComponent),
+      },
     ],
   },
 ];

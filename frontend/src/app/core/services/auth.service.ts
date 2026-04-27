@@ -6,6 +6,16 @@ import { Observable } from 'rxjs';
 import { environment } from '@env';
 import { TokenPair, User } from '../models';
 
+export interface ProfileUpdatePayload {
+  first_name?: string;
+  last_name?: string;
+  full_name_am?: string;
+  phone_number?: string;
+  email?: string;
+  current_password?: string;
+  new_password?: string;
+}
+
 const ACCESS_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
 
@@ -48,6 +58,20 @@ export class AuthService {
     return this.http
       .post<TokenPair>(`${environment.apiBase}/auth/refresh/`, { refresh })
       .pipe(tap(tokens => localStorage.setItem(ACCESS_KEY, tokens.access)));
+  }
+
+  updateProfile(payload: ProfileUpdatePayload): Observable<User> {
+    return this.http.patch<User>(`${environment.apiBase}/auth/profile/`, payload).pipe(
+      tap(user => this.currentUser.set(user))
+    );
+  }
+
+  uploadAvatar(file: File): Observable<User> {
+    const form = new FormData();
+    form.append('avatar', file);
+    return this.http.patch<User>(`${environment.apiBase}/auth/avatar/`, form).pipe(
+      tap(user => this.currentUser.set(user))
+    );
   }
 
   isLoggedIn(): boolean {

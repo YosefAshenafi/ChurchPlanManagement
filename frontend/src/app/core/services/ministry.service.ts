@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
-import { FiscalYear, Ministry, User } from '../models';
+import { AuditLog, FiscalYear, Ministry, User } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MinistryService {
@@ -20,6 +20,10 @@ export class MinistryService {
 
   updateMinistry(id: number, data: Partial<Ministry>): Observable<Ministry> {
     return this.http.patch<Ministry>(`${this.base}/ministries/${id}/`, data);
+  }
+
+  deleteMinistry(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/ministries/${id}/`);
   }
 
   listFiscalYears(): Observable<{ results: FiscalYear[] }> {
@@ -42,10 +46,24 @@ export class MinistryService {
     return this.http.patch<User>(`${this.base}/users/${id}/`, data);
   }
 
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/users/${id}/`);
+  }
+
   resetPassword(userId: number, newPassword: string): Observable<{ detail: string }> {
     return this.http.post<{ detail: string }>(
       `${this.base}/users/${userId}/reset-password/`,
       { new_password: newPassword }
     );
+  }
+
+  listAuditLogs(params?: { action?: string; actor?: string; page?: number }): Observable<{ results: AuditLog[]; count: number }> {
+    let url = `${this.base}/audit-logs/`;
+    const p: string[] = [];
+    if (params?.action) p.push(`action=${encodeURIComponent(params.action)}`);
+    if (params?.actor) p.push(`actor=${encodeURIComponent(params.actor)}`);
+    if (params?.page && params.page > 1) p.push(`page=${params.page}`);
+    if (p.length) url += `?${p.join('&')}`;
+    return this.http.get<{ results: AuditLog[]; count: number }>(url);
   }
 }

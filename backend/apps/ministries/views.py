@@ -33,6 +33,17 @@ class MinistryViewSet(ModelViewSet):
         )
         logger.info("ministry_created", extra={"name_am": ministry.name_am})
 
+    def perform_destroy(self, instance):
+        AuditLog.objects.create(
+            actor=self.request.user,
+            action=AuditLog.ACTION_MINISTRY_DELETE,
+            object_type="Ministry",
+            object_id=instance.pk,
+            detail={"name_am": instance.name_am, "slug": instance.slug},
+        )
+        logger.info("ministry_deleted", extra={"name_am": instance.name_am})
+        instance.delete()
+
 
 class FiscalYearViewSet(ModelViewSet):
     queryset = FiscalYear.objects.all()

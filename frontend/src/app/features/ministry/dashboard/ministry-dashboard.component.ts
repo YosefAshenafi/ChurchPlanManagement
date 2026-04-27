@@ -8,10 +8,10 @@ import { ToastService } from '../../../core/services/toast.service';
 import { Plan, QuarterlyReport } from '../../../core/models';
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: 'ረቂቅ',
-  submitted: 'ቀርቧል',
-  approved: 'ጸድቋል',
-  returned: 'ለክለሳ ተመልሷል',
+  draft:     'ረቂቅ',
+  submitted: 'ለሽማግሌ ቀርቧል',
+  approved:  'ጸድቋል',
+  returned:  'አስተያየት ቀርቧል',
 };
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -29,83 +29,127 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
   standalone: true,
   imports: [RouterLink, NgIf, NgFor, DatePipe],
   template: `
-    <!-- Page title -->
-    <div class="mb-6">
-      <h2 class="text-xl font-bold text-slate-800">ዋና ገጽ</h2>
-      <p class="text-slate-500 text-sm mt-0.5">የዘርፍዎን ዕቅድ እና ሪፖርቶች ይከታተሉ</p>
-      <!-- Ethiopian date display -->
-      <p class="text-indigo-600 text-xs font-medium mt-1 flex items-center gap-1">
-        <span class="material-icons text-xs">event</span>
+    <!-- Page header -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">ዋና ገጽ</h2>
+        <p class="text-slate-500 text-sm mt-1">የዘርፍዎን ዕቅድ እና ሪፖርቶች ይከታተሉ</p>
+      </div>
+      <div class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100
+                  rounded-xl px-3 py-2 text-xs font-semibold self-start flex-shrink-0">
+        <span class="material-icons" style="font-size:14px">event</span>
         {{ todayEthiopic }}
-      </p>
+      </div>
     </div>
 
     <!-- Loading skeleton -->
-    <div *ngIf="loading" class="space-y-4">
-      <div class="bg-white rounded-2xl p-6 shadow-sm animate-pulse">
-        <div class="h-4 bg-slate-200 rounded w-1/3 mb-3"></div>
-        <div class="h-8 bg-slate-200 rounded w-1/2"></div>
+    <div *ngIf="loading" class="space-y-3">
+      <div class="bg-white rounded-2xl p-6 border border-slate-100 animate-pulse">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-9 h-9 bg-slate-100 rounded-xl"></div>
+          <div class="h-4 bg-slate-100 rounded-lg w-32"></div>
+        </div>
+        <div class="h-16 bg-slate-100 rounded-xl mb-4"></div>
+        <div class="h-9 bg-slate-100 rounded-xl w-36"></div>
       </div>
     </div>
 
     <!-- Annual Plan card -->
-    <div *ngIf="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
-      <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+    <div *ngIf="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-5 overflow-hidden">
+
+      <div class="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
         <div class="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
           <span class="material-icons text-indigo-600 text-lg">assignment</span>
         </div>
-        <div>
-          <h3 class="font-semibold text-slate-800 text-sm">ዓመታዊ ዕቅድ</h3>
-          <p class="text-slate-500 text-xs">Annual Plan</p>
+        <div class="flex-1 min-w-0">
+          <h3 class="font-semibold text-slate-900 text-sm">ዓመታዊ ዕቅድ</h3>
+          <p class="text-slate-400 text-xs">Annual Plan</p>
         </div>
+        <span *ngIf="currentPlan"
+          class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border {{ statusClass(currentPlan.status) }}">
+          {{ statusLabel(currentPlan.status) }}
+        </span>
       </div>
 
-      <div class="p-4 sm:p-6">
+      <div class="p-5 sm:p-6">
         <ng-container *ngIf="currentPlan; else noPlan">
-          <!-- Plan meta -->
-          <div class="flex flex-wrap items-center gap-3 mb-4">
-            <div class="flex items-center gap-1.5 text-slate-600 text-sm">
-              <span class="material-icons text-slate-400 text-base">calendar_today</span>
-              {{ currentPlan.fiscal_year_label }}
+
+          <!-- Status highlight block -->
+          <div class="flex items-start gap-4 p-4 rounded-2xl mb-4"
+            [class.bg-amber-50]="currentPlan.status==='draft'"
+            [class.bg-blue-50]="currentPlan.status==='submitted'"
+            [class.bg-emerald-50]="currentPlan.status==='approved'"
+            [class.bg-red-50]="currentPlan.status==='returned'">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              [class.bg-amber-100]="currentPlan.status==='draft'"
+              [class.bg-blue-100]="currentPlan.status==='submitted'"
+              [class.bg-emerald-100]="currentPlan.status==='approved'"
+              [class.bg-red-100]="currentPlan.status==='returned'">
+              <span class="material-icons text-xl"
+                [class.text-amber-600]="currentPlan.status==='draft'"
+                [class.text-blue-600]="currentPlan.status==='submitted'"
+                [class.text-emerald-600]="currentPlan.status==='approved'"
+                [class.text-red-600]="currentPlan.status==='returned'">
+                {{ currentPlan.status === 'approved' ? 'check_circle' :
+                   currentPlan.status === 'submitted' ? 'schedule' :
+                   currentPlan.status === 'returned'  ? 'forum' : 'edit_note' }}
+              </span>
             </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border {{ statusClass(currentPlan.status) }}">
-              {{ statusLabel(currentPlan.status) }}
-            </span>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold text-sm"
+                [class.text-amber-800]="currentPlan.status==='draft'"
+                [class.text-blue-800]="currentPlan.status==='submitted'"
+                [class.text-emerald-800]="currentPlan.status==='approved'"
+                [class.text-red-800]="currentPlan.status==='returned'">
+                {{ statusLabel(currentPlan.status) }}
+              </p>
+              <p class="text-xs mt-0.5"
+                [class.text-amber-600]="currentPlan.status==='draft'"
+                [class.text-blue-600]="currentPlan.status==='submitted'"
+                [class.text-emerald-600]="currentPlan.status==='approved'"
+                [class.text-red-600]="currentPlan.status==='returned'">
+                {{ currentPlan.fiscal_year_label }}
+                &nbsp;·&nbsp; ተቀምጧል: {{ currentPlan.last_saved_at | date:'mediumDate' }}
+              </p>
+            </div>
           </div>
 
-          <!-- Return comment -->
-          <div *ngIf="currentPlan.review_comment" class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-            <span class="material-icons text-amber-500 text-lg flex-shrink-0">reply</span>
-            <div>
-              <p class="text-amber-800 font-medium text-sm mb-0.5">የሽማግሌ አስተያየት</p>
+          <!-- Elder comment with attribution -->
+          <div *ngIf="currentPlan.review_comment"
+            class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <span class="material-icons text-amber-500 text-lg flex-shrink-0 mt-0.5">forum</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <p class="text-amber-800 font-semibold text-sm">የሽማግሌ አስተያየት</p>
+                <span *ngIf="currentPlan.reviewed_by_name"
+                  class="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                  <span class="material-icons" style="font-size:11px">person</span>
+                  {{ currentPlan.reviewed_by_name }}
+                </span>
+                <span *ngIf="currentPlan.reviewed_at"
+                  class="text-xs text-amber-500">
+                  · {{ currentPlan.reviewed_at | date:'mediumDate' }}
+                </span>
+              </div>
               <p class="text-amber-700 text-sm">{{ currentPlan.review_comment }}</p>
             </div>
           </div>
 
-          <!-- Last saved -->
-          <p class="text-slate-400 text-xs mb-4 flex items-center gap-1">
-            <span class="material-icons text-xs">schedule</span>
-            ተቀምጧል: {{ currentPlan.last_saved_at | date:'medium' }}
-          </p>
-
-          <!-- Action buttons -->
+          <!-- Actions -->
           <div class="flex flex-wrap items-center gap-2">
-            <a
-              routerLink="/ministry/plan"
-              class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
-            >
+            <a routerLink="/ministry/plan"
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700
+                     text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
               <span class="material-icons text-base">
                 {{ currentPlan.status === 'draft' || currentPlan.status === 'returned' ? 'edit' : 'visibility' }}
               </span>
               {{ currentPlan.status === 'draft' || currentPlan.status === 'returned' ? 'ዕቅዱን ቀጥል' : 'ዕቅዱን ይመልከቱ' }}
             </a>
-            <!-- PDF Export -->
             <button
               *ngIf="currentPlan.status === 'approved' || currentPlan.status === 'submitted'"
-              (click)="exportPlanPdf()"
-              [disabled]="exportingPdf"
-              class="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-            >
+              (click)="exportPlanPdf()" [disabled]="exportingPdf"
+              class="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600
+                     hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
               <span *ngIf="!exportingPdf" class="material-icons text-base">picture_as_pdf</span>
               <span *ngIf="exportingPdf" class="loading loading-spinner loading-xs"></span>
               PDF ውርድ
@@ -114,15 +158,15 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
         </ng-container>
 
         <ng-template #noPlan>
-          <div class="text-center py-8">
-            <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span class="material-icons text-slate-400 text-2xl">description</span>
+          <div class="text-center py-10">
+            <div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span class="material-icons text-indigo-300 text-3xl">description</span>
             </div>
-            <p class="text-slate-500 text-sm mb-4">ለዚህ ዓ/ም ዕቅድ አልቀረበም</p>
-            <a
-              routerLink="/ministry/plan"
-              class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors"
-            >
+            <p class="text-slate-700 font-semibold mb-1">ዕቅድ አልቀረበም</p>
+            <p class="text-slate-400 text-sm mb-5">ለዚህ ዓ/ም ዕቅድ ገና አልቀረበም</p>
+            <a routerLink="/ministry/plan"
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700
+                     text-white rounded-xl text-sm font-semibold transition-colors">
               <span class="material-icons text-base">add</span>
               ዕቅድ ጀምር
             </a>
@@ -132,53 +176,53 @@ const QUARTER_ICONS = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
     </div>
 
     <!-- Quarterly Reports -->
-    <div *ngIf="!loading && currentPlan?.status === 'approved'" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <div class="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-          <span class="material-icons text-emerald-600 text-lg">bar_chart</span>
+    <ng-container *ngIf="!loading && currentPlan?.status === 'approved'">
+      <div class="flex items-center gap-2 mb-3 mt-1">
+        <div class="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+          <span class="material-icons text-emerald-600" style="font-size:18px">bar_chart</span>
         </div>
-        <div>
-          <h3 class="font-semibold text-slate-800 text-sm">ሩብ ዓመት ሪፖርቶች</h3>
-          <p class="text-slate-500 text-xs">Quarterly Reports</p>
-        </div>
+        <h3 class="font-semibold text-slate-900 text-sm">ሩብ ዓመት ሪፖርቶች</h3>
       </div>
 
-      <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div *ngFor="let q of [1,2,3,4]" class="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition-all group">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 bg-indigo-50 group-hover:bg-indigo-100 rounded-lg flex items-center justify-center transition-colors">
-              <span class="material-icons text-indigo-500 text-base">{{ quarterIcon(q) }}</span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div *ngFor="let q of [1,2,3,4]"
+          class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm
+                 hover:border-indigo-200 hover:shadow-md transition-all group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 bg-slate-50 group-hover:bg-indigo-50 rounded-xl flex items-center
+                        justify-center transition-colors flex-shrink-0">
+              <span class="material-icons text-slate-400 group-hover:text-indigo-500 text-base transition-colors">
+                {{ quarterIcon(q) }}
+              </span>
             </div>
-            <span class="text-sm font-semibold text-slate-700">{{ QUARTER_LABELS[q-1] }}</span>
-          </div>
-
-          <div *ngIf="reportStatus(q) as st" class="mb-3">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border {{ statusClass(st) }}">
+            <span *ngIf="reportStatus(q) as st"
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border {{ statusClass(st) }}">
               {{ statusLabel(st) }}
             </span>
+            <span *ngIf="!reportStatus(q)"
+              class="text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">—</span>
           </div>
-          <p *ngIf="!reportStatus(q)" class="text-xs text-slate-400 mb-3">ሪፖርት አልቀረበም</p>
 
-          <div class="flex flex-wrap gap-2">
-            <a
-              [routerLink]="['/ministry/report', q]"
-              class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-            >
-              <span class="material-icons text-sm">open_in_new</span>
-              ሪፖርት አዘጋጅ
+          <p class="font-semibold text-slate-800 text-sm mb-3">{{ QUARTER_LABELS[q-1] }} ሩብ ዓመት</p>
+
+          <div class="flex items-center gap-2">
+            <a [routerLink]="['/ministry/report', q]"
+              class="flex-1 flex items-center justify-center gap-1 py-1.5 bg-indigo-50
+                     hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition-colors">
+              <span class="material-icons" style="font-size:14px">open_in_new</span>
+              ሪፖርት
             </a>
             <button
               *ngIf="reportId(q) && (reportStatus(q) === 'submitted' || reportStatus(q) === 'approved')"
               (click)="exportReportPdf(q)"
-              class="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors"
-            >
-              <span class="material-icons text-sm">picture_as_pdf</span>
-              PDF
+              class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg transition-colors"
+              title="PDF ውርድ">
+              <span class="material-icons" style="font-size:16px">picture_as_pdf</span>
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </ng-container>
   `,
 })
 export class MinistryDashboardComponent implements OnInit {

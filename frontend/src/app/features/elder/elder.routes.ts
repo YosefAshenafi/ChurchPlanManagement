@@ -16,6 +16,31 @@ export const ELDER_ROUTES: Routes = [
         loadComponent: () =>
           import('./plan-review.component').then(m => m.PlanReviewComponent),
       },
+      {
+        path: 'programs',
+        loadComponent: () =>
+          import('./program-list.component').then(m => m.ProgramListComponent),
+      },
+      {
+        path: 'programs/new',
+        loadComponent: () =>
+          import('./program-form.component').then(m => m.ProgramFormComponent),
+      },
+      {
+        path: 'programs/:id',
+        loadComponent: () =>
+          import('./program-form.component').then(m => m.ProgramFormComponent),
+      },
+      {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./elder-calendar.component').then(m => m.ElderCalendarComponent),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('../shared/profile-settings.component').then(m => m.ProfileSettingsComponent),
+      },
     ],
   },
 ];

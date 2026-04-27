@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { NgIf, NgFor, DecimalPipe } from '@angular/common';
+import { NgIf, NgFor, DecimalPipe, DatePipe } from '@angular/common';
 import { PlanService } from '../../core/services/plan.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Plan } from '../../core/models';
 
 const STATUS_AM: Record<string, string> = {
-  draft: 'ረቂቅ', submitted: 'ቀርቧል', approved: 'ጸድቋል', returned: 'ለክለሳ ተመልሷል',
+  draft: 'ረቂቅ', submitted: 'ለሽማግሌ ቀርቧል', approved: 'ጸድቋል', returned: 'አስተያየት ቀርቧል',
 };
 const STATUS_CLASS: Record<string, string> = {
   draft: 'badge-draft', submitted: 'badge-submitted', approved: 'badge-approved', returned: 'badge-returned',
@@ -16,7 +16,7 @@ const STATUS_CLASS: Record<string, string> = {
 @Component({
   selector: 'app-plan-review',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgIf, NgFor, DecimalPipe],
+  imports: [ReactiveFormsModule, RouterLink, NgIf, NgFor, DecimalPipe, DatePipe],
   template: `
     <div *ngIf="!plan" class="flex flex-col items-center justify-center py-20">
       <span class="loading loading-spinner loading-lg text-green-600"></span>
@@ -180,16 +180,32 @@ const STATUS_CLASS: Record<string, string> = {
             [disabled]="acting"
             class="btn btn-outline border-red-300 text-red-600 hover:bg-red-50 gap-2"
           >
-            <span class="material-icons text-base">reply</span>
-            ለክለሳ መልስ
+            <span class="material-icons text-base">forum</span>
+            አስተያየት ሰጥቶ መልስ
           </button>
         </div>
       </div>
 
-      <!-- Existing review comment (for already reviewed plans) -->
-      <div *ngIf="plan.status !== 'submitted' && plan.review_comment" class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-        <p class="text-sm font-medium text-amber-800 mb-1">አስተያየት</p>
-        <p class="text-sm text-amber-700">{{ plan.review_comment }}</p>
+      <!-- Existing review comment with elder attribution -->
+      <div *ngIf="plan.status !== 'submitted' && plan.review_comment"
+           class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+        <div class="flex items-start gap-3">
+          <span class="material-icons text-amber-500 text-lg flex-shrink-0 mt-0.5">forum</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <p class="text-sm font-semibold text-amber-800">የሽማግሌ አስተያየት</p>
+              <span *ngIf="plan.reviewed_by_name"
+                class="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                <span class="material-icons" style="font-size:11px">person</span>
+                {{ plan.reviewed_by_name }}
+              </span>
+              <span *ngIf="plan.reviewed_at" class="text-xs text-amber-500">
+                · {{ plan.reviewed_at | date:'medium' }}
+              </span>
+            </div>
+            <p class="text-sm text-amber-700 leading-relaxed">{{ plan.review_comment }}</p>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -242,7 +258,7 @@ export class PlanReviewComponent implements OnInit {
       next: p => {
         this.plan = p;
         this.acting = false;
-        this.toast.info('ዕቅዱ ለክለሳ ተመልሷል');
+        this.toast.info('አስተያየት ሰጥቶ ዕቅዱ ተመልሷል');
       },
       error: err => {
         this.acting = false;

@@ -4,10 +4,28 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  first_name: string;
+  last_name: string;
   full_name_am: string;
+  phone_number: string;
   role: Role;
   ministry: Ministry | null;
   is_active: boolean;
+  avatar_url: string | null;
+}
+
+export interface AuditLog {
+  id: number;
+  actor: number | null;
+  actor_username: string | null;
+  actor_name: string | null;
+  actor_role: Role | null;
+  action: string;
+  action_label: string;
+  object_type: string;
+  object_id: number | null;
+  detail: Record<string, unknown>;
+  occurred_at: string;
 }
 
 export interface Ministry {
@@ -106,6 +124,8 @@ export interface Plan {
   review_comment: string;
   submitted_at: string | null;
   reviewed_at: string | null;
+  reviewed_by_name: string | null;
+  reviewed_by_username: string | null;
   last_saved_at: string;
   goals: PlanGoal[];
   budget_lines: BudgetLine[];
@@ -177,6 +197,32 @@ export interface ReportWindow {
   quarter: 1 | 2 | 3 | 4;
   is_open: boolean;
   opened_at: string | null;
+}
+
+export interface ProgramTask {
+  id?: number;
+  order: number;
+  description: string;
+  date_start: string | null;
+  date_end: string | null;
+  responsible_ministry: number | null;
+  responsible_ministry_name?: string | null;
+  include_elders: boolean;
+  responsible_label: string;
+  responsible_display?: string;
+}
+
+export interface AssemblyProgram {
+  id: number;
+  title: string;
+  fiscal_year: number | null;
+  fiscal_year_label: string | null;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+  tasks: ProgramTask[];
+  task_count: number;
 }
 
 export interface TokenPair {

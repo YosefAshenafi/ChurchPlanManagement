@@ -14,8 +14,14 @@ class AuditLog(models.Model):
     ACTION_WINDOW_CLOSE = "window_close"
     ACTION_USER_CREATE = "user_create"
     ACTION_USER_DISABLE = "user_disable"
+    ACTION_USER_UPDATE = "user_update"
+    ACTION_PROFILE_UPDATE = "profile_update"
+    ACTION_PASSWORD_RESET = "password_reset"
     ACTION_MINISTRY_CREATE = "ministry_create"
+    ACTION_MINISTRY_DELETE = "ministry_delete"
     ACTION_DOC_UPLOAD = "doc_upload"
+    ACTION_PROGRAM_CREATE = "program_create"
+    ACTION_PROGRAM_UPDATE = "program_update"
 
     ACTION_CHOICES = (
         (ACTION_PLAN_SAVE, "ዕቅድ ተቀምጧል"),
@@ -28,8 +34,14 @@ class AuditLog(models.Model):
         (ACTION_WINDOW_CLOSE, "መስኮት ተዘግቷል"),
         (ACTION_USER_CREATE, "ተጠቃሚ ተፈጥሯል"),
         (ACTION_USER_DISABLE, "ተጠቃሚ ታግዷል"),
+        (ACTION_USER_UPDATE, "ተጠቃሚ ተስተካክሏል"),
+        (ACTION_PROFILE_UPDATE, "ፕሮፋይል ተዘምኗል"),
+        (ACTION_PASSWORD_RESET, "ይለፍ ቃል ተቀይሯል"),
         (ACTION_MINISTRY_CREATE, "ዘርፍ ተፈጥሯል"),
+        (ACTION_MINISTRY_DELETE, "ዘርፍ ተሰርዟል"),
         (ACTION_DOC_UPLOAD, "ሰነድ ተጭኗል"),
+        (ACTION_PROGRAM_CREATE, "ፕሮግራም ተፈጥሯል"),
+        (ACTION_PROGRAM_UPDATE, "ፕሮግራም ተስተካክሏል"),
     )
 
     actor = models.ForeignKey(

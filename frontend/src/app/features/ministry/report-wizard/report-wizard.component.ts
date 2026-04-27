@@ -366,7 +366,11 @@ export class ReportWizardComponent implements OnInit, OnDestroy {
           } else {
             this.reportService.create(approvedPlan.id, this.quarter).subscribe({
               next: r => this._loadReport(r),
-              error: err => { this.error = err?.error?.detail ?? 'ሪፖርት ሊፈጠር አልተቻለም'; },
+              error: err => {
+                const msg = err?.error?.detail ?? err?.error?.non_field_errors?.[0] ?? 'ሪፖርት ሊፈጠር አልተቻለም';
+                this.toast.error(msg);
+                this.router.navigate(['/ministry']);
+              },
             });
           }
         });
