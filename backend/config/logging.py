@@ -20,4 +20,4 @@ class JsonFormatter(logging.Formatter):
                        "created", "funcName", "levelno", "message", "asctime"):
                 continue
             payload[key] = value
-        return json.dumps(payload, ensure_ascii=False)
+        return json.dumps(payload, ensure_ascii=False, default=str)

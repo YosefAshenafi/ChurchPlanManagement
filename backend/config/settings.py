@@ -15,6 +15,23 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-only-not-secret")
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["*"])
 
+# Railway sends healthcheck requests with Host: healthcheck.railway.app and
+# routes public traffic via $RAILWAY_PUBLIC_DOMAIN. Always trust those.
+_RAILWAY_HOSTS = ["healthcheck.railway.app"]
+for _var in ("RAILWAY_PUBLIC_DOMAIN", "RAILWAY_PRIVATE_DOMAIN", "RAILWAY_STATIC_URL"):
+    _val = env(_var, default="")
+    if _val:
+        _RAILWAY_HOSTS.append(_val.replace("https://", "").replace("http://", "").rstrip("/"))
+for _h in _RAILWAY_HOSTS:
+    if _h and _h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_h)
+
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{h}" for h in ALLOWED_HOSTS if h not in ("*", "localhost", "127.0.0.1", "backend")
+]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

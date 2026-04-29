@@ -36,6 +36,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self._create_admin()
+        self._create_yosef_admin()
         self._create_elders()
         ministries = self._create_ministries()
         leaders = self._create_leaders(ministries)
@@ -54,6 +55,17 @@ class Command(BaseCommand):
                 full_name_am="አስተዳዳሪ",
             )
             self.stdout.write("  created admin")
+
+    def _create_yosef_admin(self):
+        if not User.objects.filter(username="Yosef").exists():
+            User.objects.create_superuser(
+                username="Yosef",
+                email="yosef@church.et",
+                password="P@ssw0rds",
+                role=Role.ADMIN,
+                full_name_am="ዮሴፍ",
+            )
+            self.stdout.write("  created admin: Yosef")
 
     def _create_elders(self):
         for username, full_name, email in DEMO_ELDERS:
