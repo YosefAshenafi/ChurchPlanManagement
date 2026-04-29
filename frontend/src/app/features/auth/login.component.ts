@@ -44,12 +44,9 @@ import { Role } from '../../core/models';
             <div class="absolute inset-0 rounded-full"
                  style="padding: 3px;
                         background: linear-gradient(135deg, rgba(165,180,252,0.9), rgba(99,102,241,0.5));">
-              <div class="w-full h-full rounded-full flex items-center justify-center overflow-hidden"
-                   style="background: #1e1b4b;">
-                <img *ngIf="!logoError" src="assets/logo.svg" alt="22 Church"
-                     class="w-16 h-16 object-contain" (error)="logoError = true" />
-                <span *ngIf="logoError" class="material-icons"
-                      style="font-size: 48px; color: rgba(165,180,252,0.85);">church</span>
+              <div class="w-full h-full rounded-full flex items-center justify-center overflow-hidden bg-white">
+                <img src="logo.png" alt="22 Church"
+                     class="w-20 h-20 object-contain" />
               </div>
             </div>
             <div class="absolute inset-0 rounded-full pointer-events-none"
@@ -79,12 +76,8 @@ import { Role } from '../../core/models';
 
           <!-- Mobile-only logo header -->
           <div class="flex flex-col items-center mb-8 md:hidden">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
-                 style="background: #ede9fe;">
-              <img *ngIf="!logoError" src="assets/logo.svg" alt="22 Church"
-                   class="w-9 h-9 object-contain" />
-              <span *ngIf="logoError" class="material-icons"
-                    style="font-size: 26px; color: #6366f1;">church</span>
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-3 overflow-hidden bg-white shadow-sm border border-indigo-100">
+              <img src="logo.png" alt="22 Church" class="w-14 h-14 object-contain" />
             </div>
             <p class="text-sm font-semibold text-slate-700 text-center">
               22 ማዞሪያ ሙሉ ወንጌል አጥቢያ
@@ -174,7 +167,6 @@ export class LoginComponent {
   loading = false;
   errorMsg = '';
   showPwd = false;
-  logoError = false;
   readonly year = new Date().getFullYear();
 
   constructor(

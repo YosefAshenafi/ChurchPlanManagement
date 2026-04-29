@@ -21,6 +21,11 @@ export const MINISTRY_ROUTES: Routes = [
           ),
       },
       {
+        path: 'reports',
+        loadComponent: () =>
+          import('./ministry-reports.component').then(m => m.MinistryReportsComponent),
+      },
+      {
         path: 'report/:quarter',
         loadComponent: () =>
           import('./report-wizard/report-wizard.component').then(

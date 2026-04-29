@@ -37,7 +37,7 @@ import { AssemblyProgram, Ministry } from '../../core/models';
           <span class="material-icons text-base">print</span>
           አትም
         </button>
-        <button *ngIf="canEdit()" (click)="save()" [disabled]="form.invalid || saving"
+        <button *ngIf="canEdit()" (click)="save()" [disabled]="saving || !canSave"
           class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800
                  text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
           <span class="material-icons text-base">save</span>
@@ -68,6 +68,7 @@ import { AssemblyProgram, Ministry } from '../../core/models';
               የፕሮግራሙ ርዕስ *
             </label>
             <input type="text" [formControl]="$any(form.get('title'))"
+              (input)="onTitleInput()"
               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white
                      focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
               placeholder="ለምሳሌ፦ የሪፎርትና ዕቅድ ዝግጅት መርሃ-ግብር" />
@@ -258,12 +259,12 @@ import { AssemblyProgram, Ministry } from '../../core/models';
             <span class="material-icons text-base">print</span>
             አትም
           </button>
-          <button (click)="save()" [disabled]="form.invalid || saving"
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800
-                   text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
-            <span class="material-icons text-base">save</span>
-            {{ saving ? 'እየተቀመጠ...' : (isNew ? 'ፕሮግራም ፍጠር' : 'ለውጦችን አስቀምጥ') }}
-          </button>
+<button (click)="save()" [disabled]="saving"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800
+                 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+          <span class="material-icons text-base">save</span>
+          {{ saving ? 'እየተቀመጠ...' : 'ፕሮግራም ፍጠር' }}
+        </button>
         </div>
       </div>
     </div>
@@ -285,6 +286,7 @@ export class ProgramFormComponent implements OnInit {
   isNew = true;
   loading = false;
   saving = false;
+  canSave = true;
 
   constructor(
     private fb: FormBuilder,
@@ -299,7 +301,7 @@ export class ProgramFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      title: ['', Validators.required],
+      title: [''],
       fiscal_year: [null],
       tasks: this.fb.array([]),
     });
@@ -316,10 +318,13 @@ export class ProgramFormComponent implements OnInit {
           this.program = p;
           this.form.patchValue({ title: p.title, fiscal_year: p.fiscal_year });
           p.tasks.forEach(t => this.tasks.push(this._taskGroup(t)));
+          if (this.tasks.length === 0) this.addTask();
           this.loading = false;
         },
         error: () => { this.loading = false; this.toast.error('ፕሮግራሙ አልተገኘም'); },
       });
+    } else {
+      this.addTask();
     }
   }
 
@@ -327,9 +332,17 @@ export class ProgramFormComponent implements OnInit {
     return this.form.get('tasks') as FormArray;
   }
 
+  get titleExists(): boolean {
+    return !!(this.form.get('title')?.value as string)?.trim();
+  }
+
+  onTitleInput(): void {
+    this.canSave = true;
+  }
+
   private _taskGroup(t?: Partial<{ description: string; date_start: string | null; date_end: string | null; responsible_ministry: number | null; include_elders: boolean; responsible_label: string }>): FormGroup {
     return this.fb.group({
-      description: [t?.description ?? '', Validators.required],
+      description: [t?.description ?? ''],
       date_start: [t?.date_start ?? null],
       date_end: [t?.date_end ?? null],
       responsible_ministry: [t?.responsible_ministry ?? null],
@@ -352,11 +365,14 @@ export class ProgramFormComponent implements OnInit {
   }
 
   save(): void {
-    if (this.form.invalid || this.saving) return;
+    if (this.saving || !this.titleExists) return;
     this.saving = true;
+    const tasksWithOrder = this.tasks.controls
+      .map((c, i) => ({ ...c.value, order: i + 1 }))
+      .filter(t => t.description?.trim());
     const payload = {
       ...this.form.value,
-      tasks: this.tasks.controls.map((c, i) => ({ ...c.value, order: i + 1 })),
+      tasks: tasksWithOrder,
     };
     const req = this.isNew
       ? this.svc.create(payload)

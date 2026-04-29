@@ -9,12 +9,13 @@ import { switchMap } from 'rxjs/operators';
 import { PlanService } from '../../../core/services/plan.service';
 import { EthiopicDateService } from '../../../core/services/ethiopic-date.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Plan } from '../../../core/models';
+import { Plan, BudgetAllocation, ScheduleEntry } from '../../../core/models';
 
 const STEPS = [
   'መግቢያ', 'አጠቃላይ ዓላማ', 'ዋና ዋና ግቦች',
-  'ዝርዝር ተግባራት', 'በጀት', 'ታሳቢዎች',
-  'ክትትልና ግምገማ', 'ተግዳሮቶች', 'ማስገባት',
+  'ዝርዝር ተግባራት', 'ዝርዝር በጀት', 'ሩብ ዓ/ም በጀት',
+  'የድርጊት መርሃ ግብር', 'ታሳቢዎች', 'ክትትልና ግምገማ',
+  'ተግዳሮቶች', 'ማስገባት',
 ];
 
 @Component({
@@ -31,6 +32,7 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   exportingPdf = false;
   lastSaved: Date | null = null;
   isReadOnly = false;
+  loadError = false;
   todayEthiopic = '';
 
   currentStep = 0;
@@ -40,6 +42,8 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   narrativeForm!: FormGroup;
   goalsForm!: FormArray;
   budgetForm!: FormArray;
+  budgetAllocForm!: FormArray;
+  scheduleForm!: FormArray;
   risksForm!: FormArray;
 
   private subs = new Subscription();
@@ -56,12 +60,40 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.todayEthiopic = this.ethiopicDate.format(new Date());
     this._initForms();
-    this.planService.list().subscribe(res => {
-      if (res.results.length > 0) {
-        this._loadPlan(res.results[0]);
-      } else {
-        this.planService.create().subscribe(plan => this._loadPlan(plan));
-      }
+    this.planService.list().subscribe({
+      next: res => {
+        const editablePlan = res.results.find(
+          p => p.status === 'draft' || p.status === 'returned'
+        );
+        if (editablePlan) {
+          this._loadPlan(editablePlan);
+        } else if (res.results.length > 0) {
+          this._loadPlan(res.results[0]);
+        } else {
+          this.planService.create().subscribe({
+            next: plan => this._loadPlan(plan),
+            error: (err) => {
+              const existing = err.error?.detail || err.error;
+              if (typeof existing === 'string' && existing.includes('አስቀድሞ ተፈጥሯል')) {
+                this.planService.list().subscribe({
+                  next: (r) => {
+                    if (r.results.length > 0) {
+                      this._loadPlan(r.results[0]);
+                    } else {
+                      this.loadError = true;
+                    }
+                  },
+                  error: () => { this.loadError = true; },
+                });
+              } else {
+                this.loadError = true;
+              }
+              this.cdr.markForCheck();
+            },
+          });
+        }
+      },
+      error: () => { this.loadError = true; },
     });
     this.subs.add(
       interval(20_000).subscribe(() => {
@@ -88,6 +120,8 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
     });
     this.goalsForm = this.fb.array([]);
     this.budgetForm = this.fb.array([]);
+    this.budgetAllocForm = this.fb.array([]);
+    this.scheduleForm = this.fb.array([]);
     this.risksForm = this.fb.array([]);
   }
 
@@ -110,6 +144,16 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
       this.budgetForm.push(this._buildBudgetLineGroup(bl));
     }
     if (this.budgetForm.length === 0) this.addBudgetLine();
+    this.budgetAllocForm.clear();
+    for (const goal of plan.goals) {
+      const existing = plan.budget_allocations?.find(ba => ba.goal === goal.id);
+      this.budgetAllocForm.push(this._buildAllocGroup(goal.id!, goal.title, existing));
+    }
+    this.scheduleForm.clear();
+    for (const se of (plan.schedule_entries ?? [])) {
+      this.scheduleForm.push(this._buildScheduleGroup(se));
+    }
+    if (this.scheduleForm.length === 0) this.addScheduleEntry();
     this.risksForm.clear();
     for (const r of plan.risks) {
       this.risksForm.push(this._buildRiskGroup(r));
@@ -119,6 +163,8 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
       this.narrativeForm.disable();
       this.goalsForm.disable();
       this.budgetForm.disable();
+      this.budgetAllocForm.disable();
+      this.scheduleForm.disable();
       this.risksForm.disable();
     }
     this.cdr.markForCheck();
@@ -223,6 +269,44 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   removeRisk(i: number): void { this.risksForm.removeAt(i); }
   riskAt(i: number): FormGroup { return this.risksForm.at(i) as FormGroup; }
 
+  // ── Budget allocation helpers ──────────────────────────────────────────────
+  private _buildAllocGroup(goalId: number, goalTitle: string, data?: Partial<BudgetAllocation>): FormGroup {
+    return this.fb.group({
+      id: [data?.id ?? null],
+      goal: [goalId],
+      goal_title: [goalTitle],
+      requested_total: [data?.requested_total ?? null],
+      q1_budget: [data?.q1_budget ?? null],
+      q2_budget: [data?.q2_budget ?? null],
+      q3_budget: [data?.q3_budget ?? null],
+      q4_budget: [data?.q4_budget ?? null],
+      note: [data?.note ?? ''],
+    });
+  }
+  allocAt(i: number): FormGroup { return this.budgetAllocForm.at(i) as FormGroup; }
+
+  // ── Schedule helpers ───────────────────────────────────────────────────────
+  private _buildScheduleGroup(data?: Partial<ScheduleEntry>): FormGroup {
+    return this.fb.group({
+      id: [data?.id ?? null],
+      goal: [data?.goal ?? (this.goalsForm.at(0) as FormGroup)?.get('id')?.value ?? null],
+      activity_description: [data?.activity_description ?? ''],
+      q1: [data?.q1 ?? false],
+      q2: [data?.q2 ?? false],
+      q3: [data?.q3 ?? false],
+      q4: [data?.q4 ?? false],
+    });
+  }
+  addScheduleEntry(): void { this.scheduleForm.push(this._buildScheduleGroup()); }
+  removeScheduleEntry(i: number): void { this.scheduleForm.removeAt(i); }
+  scheduleAt(i: number): FormGroup { return this.scheduleForm.at(i) as FormGroup; }
+  get goalOptions(): { id: number; title: string }[] {
+    return this.goalsForm.controls.map(g => ({
+      id: (g as FormGroup).get('id')?.value,
+      title: (g as FormGroup).get('title')?.value || '—',
+    }));
+  }
+
   // ── Save / Submit ──────────────────────────────────────────────────────────
   saveDraft(): void {
     if (!this.plan || this.saving) return;
@@ -259,10 +343,16 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   }
 
   private _buildPayload(): Partial<Plan> {
+    const allocRaw = this.budgetAllocForm.getRawValue().map((a: any) => {
+      const { goal_title, ...rest } = a;
+      return rest;
+    });
     return {
       ...this.narrativeForm.getRawValue(),
       goals: this.goalsForm.getRawValue(),
       budget_lines: this.budgetForm.getRawValue(),
+      budget_allocations: allocRaw,
+      schedule_entries: this.scheduleForm.getRawValue(),
       risks: this.risksForm.getRawValue(),
     };
   }

@@ -29,9 +29,8 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- ① Brand -->
         <div class="flex items-center gap-3 px-5 py-4">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow"
-               style="background:rgba(99,102,241,0.35)">
-            <span class="material-icons text-white" style="font-size:20px">church</span>
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden bg-white/95">
+            <img src="logo.png" alt="22 Church" class="w-9 h-9 object-contain" />
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-white font-bold text-sm leading-tight tracking-wide">22 ማዞሪያ</p>
@@ -47,31 +46,6 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Separator -->
         <div class="mx-4" style="height:1px;background:rgba(255,255,255,0.07)"></div>
 
-        <!-- ② User card -->
-        <div class="px-4 py-3">
-          <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-               style="background:rgba(255,255,255,0.05)">
-            <img *ngIf="auth.currentUser()?.avatar_url"
-                 [src]="auth.currentUser()!.avatar_url!"
-                 class="w-8 h-8 rounded-xl object-cover flex-shrink-0 shadow-sm" />
-            <div *ngIf="!auth.currentUser()?.avatar_url"
-                 class="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center
-                        flex-shrink-0 shadow-sm">
-              <span class="text-white text-xs font-bold">{{ initials() }}</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-white text-xs font-semibold truncate leading-tight">
-                {{ ministry() || user()?.full_name_am || user()?.username }}
-              </p>
-              <p class="text-xs truncate leading-tight mt-0.5"
-                 style="color:rgba(165,180,252,0.6)">ዘርፍ ኃላፊ</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Separator -->
-        <div class="mx-4" style="height:1px;background:rgba(255,255,255,0.07)"></div>
-
         <!-- ③ Navigation -->
         <nav class="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
           <p class="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.15em]"
@@ -81,11 +55,10 @@ import { AuthService } from '../../core/services/auth.service';
              routerLinkActive="!bg-indigo-600 !text-white shadow-sm"
              [routerLinkActiveOptions]="{exact:true}"
              class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                    transition-all group"
+                    transition-all"
              style="color:rgba(165,180,252,0.8)"
              (click)="sidebarOpen.set(false)">
-            <span class="material-icons text-[20px] group-[.active-link]:text-white"
-                  style="opacity:0.8">home</span>
+            <span class="material-icons text-[20px]" style="opacity:0.8">home</span>
             ዋና ገጽ
           </a>
 
@@ -95,8 +68,8 @@ import { AuthService } from '../../core/services/auth.service';
                     transition-all"
              style="color:rgba(165,180,252,0.8)"
              (click)="sidebarOpen.set(false)">
-            <span class="material-icons text-[20px]" style="opacity:0.8">assignment</span>
-            ዓመታዊ ዕቅድ
+            <span class="material-icons text-[20px]" style="opacity:0.8">edit_note</span>
+            ዓ/ም ዕቅድ አዘጋጅ
           </a>
 
           <a routerLink="/ministry/history"
@@ -117,6 +90,16 @@ import { AuthService } from '../../core/services/auth.service';
              (click)="sidebarOpen.set(false)">
             <span class="material-icons text-[20px]" style="opacity:0.8">manage_accounts</span>
             የፕሮፋይል ቅንብሮች
+          </a>
+
+          <a routerLink="/ministry/reports"
+             routerLinkActive="!bg-indigo-600 !text-white shadow-sm"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                    transition-all"
+             style="color:rgba(165,180,252,0.8)"
+             (click)="sidebarOpen.set(false)">
+            <span class="material-icons text-[20px]" style="opacity:0.8">folder_open</span>
+            የመጨረሻ ሪፖርቶች
           </a>
         </nav>
 
@@ -148,9 +131,8 @@ import { AuthService } from '../../core/services/auth.service';
           </button>
 
           <div class="flex items-center gap-2 min-w-0">
-            <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                 style="background:rgba(99,102,241,0.1)">
-              <span class="material-icons text-indigo-600" style="font-size:14px">church</span>
+            <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-white border border-slate-100">
+              <img src="logo.png" alt="22 Church" class="w-5 h-5 object-contain" />
             </div>
             <span class="text-slate-400 text-sm hidden sm:block truncate">22 ማዞሪያ ሙሉ ወንጌል</span>
             <span class="text-slate-300 hidden sm:block">/</span>
@@ -162,12 +144,40 @@ import { AuthService } from '../../core/services/auth.service';
               <span class="text-xs font-semibold text-slate-700">{{ user()?.full_name_am || user()?.username }}</span>
               <span class="text-[10px] text-slate-400">ዘርፍ ኃላፊ</span>
             </div>
-            <img *ngIf="auth.currentUser()?.avatar_url"
-                 [src]="auth.currentUser()!.avatar_url!"
-                 class="w-8 h-8 rounded-full object-cover shadow-sm" />
-            <div *ngIf="!auth.currentUser()?.avatar_url"
-                 class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-              <span class="text-white text-xs font-bold">{{ initials() }}</span>
+            <div class="relative">
+              <div *ngIf="dropdownOpen()" class="fixed inset-0 z-40" (click)="dropdownOpen.set(false)"></div>
+              <button (click)="dropdownOpen.set(!dropdownOpen())"
+                class="relative z-50 focus:outline-none rounded-full">
+                <img *ngIf="auth.currentUser()?.avatar_url"
+                     [src]="auth.currentUser()!.avatar_url!"
+                     class="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-transparent
+                            hover:ring-indigo-400 transition-all" />
+                <div *ngIf="!auth.currentUser()?.avatar_url"
+                     class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm
+                            ring-2 ring-transparent hover:ring-indigo-400 transition-all">
+                  <span class="text-white text-xs font-bold">{{ initials() }}</span>
+                </div>
+              </button>
+              <div *ngIf="dropdownOpen()"
+                class="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl
+                       border border-slate-100 overflow-hidden z-50">
+                <div class="px-4 py-3 border-b border-slate-50">
+                  <p class="text-xs font-semibold text-slate-700 truncate">{{ user()?.full_name_am || user()?.username }}</p>
+                  <p class="text-[10px] text-slate-400">ዘርፍ ኃላፊ</p>
+                </div>
+                <a routerLink="/ministry/settings" (click)="dropdownOpen.set(false)"
+                  class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600
+                         hover:bg-slate-50 transition-colors">
+                  <span class="material-icons text-[18px] text-slate-400">manage_accounts</span>
+                  የፕሮፋይል ቅንብሮች
+                </a>
+                <button (click)="logout()"
+                  class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-rose-600
+                         hover:bg-rose-50 transition-colors">
+                  <span class="material-icons text-[18px]">logout</span>
+                  ውጣ
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -181,6 +191,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class MinistryShellComponent {
   sidebarOpen = signal(false);
+  dropdownOpen = signal(false);
   user = this.auth.currentUser;
   ministry = computed(() => this.user()?.ministry?.name_am ?? '');
   initials = computed(() => {

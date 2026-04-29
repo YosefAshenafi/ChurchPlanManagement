@@ -21,10 +21,15 @@
             "outputPath": "dist/plan-management-system",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.json",
             "assets": [
-              { "glob": "**/*", "input": "src/assets" }
+              {
+                "glob": "**/*",
+                "input": "src/assets"
+              }
             ],
             "styles": [
               "src/styles.scss"
@@ -40,7 +45,11 @@
                 }
               ],
               "budgets": [
-                { "type": "initial", "maximumWarning": "500kb", "maximumError": "1mb" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                }
               ],
               "outputHashing": "all"
             },
@@ -55,17 +64,26 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": { "buildTarget": "plan-management-system:build:production" },
-            "development": { "buildTarget": "plan-management-system:build:development" }
+            "production": {
+              "buildTarget": "plan-management-system:build:production"
+            },
+            "development": {
+              "buildTarget": "plan-management-system:build:development"
+            }
           },
           "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": ["zone.js", "zone.js/testing"],
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "tsConfig": "tsconfig.json",
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": [],
             "assets": []
           }

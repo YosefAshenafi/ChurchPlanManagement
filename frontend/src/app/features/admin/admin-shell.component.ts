@@ -29,9 +29,8 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- ① Brand -->
         <div class="flex items-center gap-3 px-5 py-4">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow"
-               style="background:rgba(225,29,72,0.25)">
-            <span class="material-icons text-white" style="font-size:20px">admin_panel_settings</span>
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden bg-white/95">
+            <img src="logo.png" alt="22 Church" class="w-9 h-9 object-contain" />
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-white font-bold text-sm leading-tight tracking-wide">22 ማዞሪያ</p>
@@ -134,9 +133,8 @@ import { AuthService } from '../../core/services/auth.service';
           </button>
 
           <div class="flex items-center gap-2 min-w-0">
-            <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                 style="background:rgba(225,29,72,0.08)">
-              <span class="material-icons text-rose-700" style="font-size:14px">admin_panel_settings</span>
+            <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-white border border-slate-100">
+              <img src="logo.png" alt="22 Church" class="w-5 h-5 object-contain" />
             </div>
             <span class="text-slate-400 text-sm hidden sm:block truncate">22 ማዞሪያ ሙሉ ወንጌል</span>
             <span class="text-slate-300 hidden sm:block">/</span>
@@ -148,12 +146,40 @@ import { AuthService } from '../../core/services/auth.service';
               <span class="text-xs font-semibold text-slate-700">{{ auth.currentUser()?.full_name_am || auth.currentUser()?.username }}</span>
               <span class="text-[10px] text-slate-400">አስተዳዳሪ</span>
             </div>
-            <img *ngIf="auth.currentUser()?.avatar_url"
-                 [src]="auth.currentUser()!.avatar_url!"
-                 class="w-8 h-8 rounded-full object-cover shadow-sm" />
-            <div *ngIf="!auth.currentUser()?.avatar_url"
-                 class="w-8 h-8 bg-rose-700 rounded-full flex items-center justify-center shadow-sm">
-              <span class="text-white text-xs font-bold">{{ initials() }}</span>
+            <div class="relative">
+              <div *ngIf="dropdownOpen()" class="fixed inset-0 z-40" (click)="dropdownOpen.set(false)"></div>
+              <button (click)="dropdownOpen.set(!dropdownOpen())"
+                class="relative z-50 focus:outline-none rounded-full">
+                <img *ngIf="auth.currentUser()?.avatar_url"
+                     [src]="auth.currentUser()!.avatar_url!"
+                     class="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-transparent
+                            hover:ring-rose-400 transition-all" />
+                <div *ngIf="!auth.currentUser()?.avatar_url"
+                     class="w-8 h-8 bg-rose-700 rounded-full flex items-center justify-center shadow-sm
+                            ring-2 ring-transparent hover:ring-rose-400 transition-all">
+                  <span class="text-white text-xs font-bold">{{ initials() }}</span>
+                </div>
+              </button>
+              <div *ngIf="dropdownOpen()"
+                class="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl
+                       border border-slate-100 overflow-hidden z-50">
+                <div class="px-4 py-3 border-b border-slate-50">
+                  <p class="text-xs font-semibold text-slate-700 truncate">{{ auth.currentUser()?.full_name_am || auth.currentUser()?.username }}</p>
+                  <p class="text-[10px] text-slate-400">አስተዳዳሪ</p>
+                </div>
+                <a routerLink="/admin/settings" (click)="dropdownOpen.set(false)"
+                  class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600
+                         hover:bg-slate-50 transition-colors">
+                  <span class="material-icons text-[18px] text-slate-400">manage_accounts</span>
+                  የፕሮፋይል ቅንብሮች
+                </a>
+                <button (click)="auth.logout()"
+                  class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-rose-600
+                         hover:bg-rose-50 transition-colors">
+                  <span class="material-icons text-[18px]">logout</span>
+                  ውጣ
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -167,6 +193,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class AdminShellComponent {
   sidebarOpen = signal(false);
+  dropdownOpen = signal(false);
   initials = computed(() => {
     const name = this.auth.currentUser()?.full_name_am ?? this.auth.currentUser()?.username ?? '';
     return name.substring(0, 2).toUpperCase();

@@ -63,6 +63,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./public:/app/public:ro
     ports:
       - "8001:8001"
     stop_grace_period: 5s
@@ -80,6 +81,7 @@ services:
       - backend
     volumes:
       - ./frontend/src:/app/src
+      - ./public/assets/logo.png:/app/src/assets/logo.png:ro
     ports:
       - "4300:4300"
     stop_grace_period: 5s

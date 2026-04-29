@@ -37,6 +37,21 @@ export const ELDER_ROUTES: Routes = [
           import('./elder-calendar.component').then(m => m.ElderCalendarComponent),
       },
       {
+        path: 'reports',
+        loadComponent: () =>
+          import('./elder-reports.component').then(m => m.ElderReportsComponent),
+      },
+      {
+        path: 'plans',
+        loadComponent: () =>
+          import('./elder-plans.component').then(m => m.ElderPlansComponent),
+      },
+      {
+        path: 'activity',
+        loadComponent: () =>
+          import('./elder-activity.component').then(m => m.ElderActivityComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('../shared/profile-settings.component').then(m => m.ProfileSettingsComponent),

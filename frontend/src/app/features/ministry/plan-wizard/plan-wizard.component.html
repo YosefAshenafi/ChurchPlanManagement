@@ -52,9 +52,28 @@
   </div>
 
   <!-- Loading -->
-  <div *ngIf="!plan" class="flex flex-col items-center justify-center py-20">
+  <div *ngIf="!plan && !loadError" class="flex flex-col items-center justify-center py-20">
     <span class="loading loading-spinner loading-lg text-primary"></span>
     <p class="text-slate-500 text-sm mt-4">እየጫነ ነው...</p>
+  </div>
+
+  <!-- No editable plan (all submitted/approved) -->
+  <div *ngIf="!plan && loadError"
+       class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col
+              items-center justify-center py-16 px-6 text-center">
+    <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-3">
+      <span class="material-icons text-amber-400 text-3xl">assignment_turned_in</span>
+    </div>
+    <p class="text-slate-700 font-semibold mb-1">አዲስ ዕቅድ ማዘጋጀት አይቻልም</p>
+    <p class="text-slate-400 text-sm mb-5">
+      ለዚህ ዓ/ም ዕቅድ አስቀድሞ ቀርቧል። ቀደሙን ዕቅዶችና ሪፖርቶች ለማየት ሪፖርቶች ክፍልን ይጠቀሙ።
+    </p>
+    <a routerLink="/ministry/reports"
+       class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white
+              rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors">
+      <span class="material-icons text-base">folder_open</span>
+      ሪፖርቶችን ይመልከቱ
+    </a>
   </div>
 
   <div *ngIf="plan">
@@ -353,10 +372,133 @@
       </div>
     </div>
 
-    <!-- ── Step 6: Assumptions ────────────────────────────────────────────── -->
+    <!-- ── Step 6: Quarterly Budget Allocation ────────────────────────────── -->
     <div *ngIf="currentStep === 5" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
       <div class="border-b border-slate-100 pb-4 mb-5">
-        <h3 class="font-semibold text-slate-800">7. የዕቅዱ ታሳቢዎች (Assumptions)</h3>
+        <h3 class="font-semibold text-slate-800">6. ዕቅዱን ለማስፈጸም የሚያስፈልገው በጀት (ሩብ ዓ/ም)</h3>
+        <p class="text-slate-500 text-sm mt-1">ለእያንዳንዱ ግብ የሚያስፈልገው በጀት በሩብ ዓ/ም ይከፋፍሉ</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[640px]">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600">
+              <th class="text-left px-3 py-2.5 rounded-l-lg font-medium">ግቦች</th>
+              <th class="text-right px-3 py-2.5 font-medium w-32">የተጠየቀ በጀት</th>
+              <th class="text-right px-3 py-2.5 font-medium w-28">1ኛ ሩብ ዓ/ም</th>
+              <th class="text-right px-3 py-2.5 font-medium w-28">2ኛ ሩብ ዓ/ም</th>
+              <th class="text-right px-3 py-2.5 font-medium w-28">3ኛ ሩብ ዓ/ም</th>
+              <th class="text-right px-3 py-2.5 font-medium w-28 rounded-r-lg">4ኛ ሩብ ዓ/ም</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let _ of budgetAllocForm.controls; let ai = index" [formGroup]="allocAt(ai)">
+              <td class="px-3 py-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 text-xs font-bold flex-shrink-0">{{ ai + 1 }}</span>
+                  <span class="text-sm font-medium text-slate-700">{{ allocAt(ai).get('goal_title')?.value || goalIndexLabels[ai] }}</span>
+                </div>
+              </td>
+              <td class="px-3 py-2.5">
+                <input type="number" formControlName="requested_total"
+                  class="w-28 text-sm text-right outline-none border-b border-transparent focus:border-indigo-400 transition-colors py-0.5 bg-transparent" />
+              </td>
+              <td class="px-3 py-2.5">
+                <input type="number" formControlName="q1_budget"
+                  class="w-24 text-sm text-right outline-none border-b border-transparent focus:border-indigo-400 transition-colors py-0.5 bg-transparent" />
+              </td>
+              <td class="px-3 py-2.5">
+                <input type="number" formControlName="q2_budget"
+                  class="w-24 text-sm text-right outline-none border-b border-transparent focus:border-indigo-400 transition-colors py-0.5 bg-transparent" />
+              </td>
+              <td class="px-3 py-2.5">
+                <input type="number" formControlName="q3_budget"
+                  class="w-24 text-sm text-right outline-none border-b border-transparent focus:border-indigo-400 transition-colors py-0.5 bg-transparent" />
+              </td>
+              <td class="px-3 py-2.5">
+                <input type="number" formControlName="q4_budget"
+                  class="w-24 text-sm text-right outline-none border-b border-transparent focus:border-indigo-400 transition-colors py-0.5 bg-transparent" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="budgetAllocForm.length === 0" class="text-slate-400 text-sm text-center py-6">
+          ግቦች ከጨመሩ በኋላ ሩብ ዓ/ም በጀት ይሞላሉ
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Step 7: Action Plan Schedule ───────────────────────────────────── -->
+    <div *ngIf="currentStep === 6" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="border-b border-slate-100 pb-4 mb-5 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-slate-800">7. ዝርዝር የድርጊት መርሃ ግብር</h3>
+          <p class="text-slate-500 text-sm mt-0.5">ዝርዝር ተግባራት ለምን ሩብ ዓ/ም እንደሚከናወኑ ይምረጡ</p>
+        </div>
+        <button
+          *ngIf="!isReadOnly"
+          (click)="addScheduleEntry()"
+          class="btn btn-sm btn-outline border-indigo-300 text-indigo-600 hover:bg-indigo-50 gap-1"
+        >
+          <span class="material-icons text-base">add</span> ተግባር ጨምር
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600">
+              <th class="text-left px-3 py-2.5 rounded-l-lg font-medium w-8">#</th>
+              <th class="text-left px-3 py-2.5 font-medium w-28">ግብ</th>
+              <th class="text-left px-3 py-2.5 font-medium">ዝርዝር ተግባር</th>
+              <th class="text-center px-2 py-2.5 font-medium w-12">1ኛ ሩብ</th>
+              <th class="text-center px-2 py-2.5 font-medium w-12">2ኛ ሩብ</th>
+              <th class="text-center px-2 py-2.5 font-medium w-12">3ኛ ሩብ</th>
+              <th class="text-center px-2 py-2.5 font-medium w-12 rounded-r-lg">4ኛ ሩብ</th>
+              <th *ngIf="!isReadOnly" class="w-10"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let _ of scheduleForm.controls; let si = index" [formGroup]="scheduleAt(si)">
+              <td class="px-3 py-2 text-slate-400 text-xs">{{ si + 1 }}</td>
+              <td class="px-3 py-2">
+                <select formControlName="goal"
+                  class="w-full text-xs border-b border-transparent focus:border-indigo-400 outline-none bg-transparent py-0.5">
+                  <option *ngFor="let g of goalOptions; let gi = index" [value]="g.id">
+                    {{ goalIndexLabels[gi] }}
+                  </option>
+                </select>
+              </td>
+              <td class="px-3 py-2">
+                <input type="text" formControlName="activity_description" placeholder="ዝርዝር ተግባር"
+                  class="w-full text-sm outline-none border-b border-transparent focus:border-indigo-400 transition-colors py-0.5 bg-transparent" />
+              </td>
+              <td class="px-2 py-2 text-center">
+                <input type="checkbox" formControlName="q1" class="checkbox checkbox-xs checkbox-primary" />
+              </td>
+              <td class="px-2 py-2 text-center">
+                <input type="checkbox" formControlName="q2" class="checkbox checkbox-xs checkbox-primary" />
+              </td>
+              <td class="px-2 py-2 text-center">
+                <input type="checkbox" formControlName="q3" class="checkbox checkbox-xs checkbox-primary" />
+              </td>
+              <td class="px-2 py-2 text-center">
+                <input type="checkbox" formControlName="q4" class="checkbox checkbox-xs checkbox-primary" />
+              </td>
+              <td *ngIf="!isReadOnly" class="px-2 py-2">
+                <button (click)="removeScheduleEntry(si)" class="p-1 text-red-400 hover:text-red-600 rounded transition-colors">
+                  <span class="material-icons text-base">delete</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Step 8: Assumptions ────────────────────────────────────────────── -->
+    <div *ngIf="currentStep === 7" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="border-b border-slate-100 pb-4 mb-5">
+        <h3 class="font-semibold text-slate-800">8. የዕቅዱ ታሳቢዎች (Assumptions)</h3>
       </div>
       <div [formGroup]="narrativeForm">
         <textarea formControlName="assumptions" rows="6"
@@ -364,10 +506,10 @@
       </div>
     </div>
 
-    <!-- ── Step 7: M&E ────────────────────────────────────────────────────── -->
-    <div *ngIf="currentStep === 6" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+    <!-- ── Step 9: M&E ────────────────────────────────────────────────────── -->
+    <div *ngIf="currentStep === 8" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
       <div class="border-b border-slate-100 pb-4 mb-5">
-        <h3 class="font-semibold text-slate-800">8. የክትትልና ግምገማ ሥራዎች (M&amp;E)</h3>
+        <h3 class="font-semibold text-slate-800">9. የክትትልና ግምገማ ሥራዎች (M&amp;E)</h3>
       </div>
       <div [formGroup]="narrativeForm">
         <textarea formControlName="monitoring_evaluation" rows="6"
@@ -375,8 +517,8 @@
       </div>
     </div>
 
-    <!-- ── Step 8: Risks ──────────────────────────────────────────────────── -->
-    <div *ngIf="currentStep === 7" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+    <!-- ── Step 10: Risks ─────────────────────────────────────────────────── -->
+    <div *ngIf="currentStep === 9" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
       <div class="border-b border-slate-100 pb-4 mb-5 flex items-center justify-between">
         <h3 class="font-semibold text-slate-800">9. ሊያጋጥሙ የሚችሉ ተግዳሮቶች (Risks)</h3>
         <button
@@ -417,8 +559,8 @@
       </div>
     </div>
 
-    <!-- ── Step 9: Review & Submit ────────────────────────────────────────── -->
-    <div *ngIf="currentStep === 8" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+    <!-- ── Step 11: Review & Submit ─────────────────────────────────────── -->
+    <div *ngIf="currentStep === 10" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
       <div class="border-b border-slate-100 pb-4 mb-5">
         <h3 class="font-semibold text-slate-800">ማጠቃለያ እና ማስገባት</h3>
       </div>
