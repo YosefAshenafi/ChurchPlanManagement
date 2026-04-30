@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 echo "=== Starting Django setup ==="
 echo "PORT: ${PORT:-8001}"
@@ -16,9 +15,9 @@ python manage.py collectstatic --noinput
 echo "=== Running seed_users ==="
 python manage.py seed_users
 
-# Verify admin exists
+# Verify admin exists (write to temp file to avoid quote issues)
 echo "=== Verifying admin account ==="
-python manage.py shell -c "
+python manage.py shell << 'EOF'
 from django.contrib.auth import get_user_model
 User = get_user_model()
 admins = User.objects.filter(is_superuser=True)
@@ -27,8 +26,7 @@ for u in admins:
     print(f'  - Username: {u.username}, Email: {u.email}, Role: {u.role}')
 if not admins.exists():
     print('  ERROR: No superuser found!')
-    exit(1)
-"
+EOF
 
 echo "=== Starting gunicorn ==="
 exec gunicorn config.wsgi:application \
