@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgIf, NgFor, DecimalPipe, DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { PlanService } from '../../../core/services/plan.service';
@@ -21,7 +21,7 @@ const STEPS = [
 @Component({
   selector: 'app-plan-wizard',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, NgIf, NgFor, DecimalPipe, DatePipe, RouterLink],
   templateUrl: './plan-wizard.component.html',
   styleUrls: ['./plan-wizard.component.scss'],
 })
@@ -34,6 +34,9 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
   isReadOnly = false;
   loadError = false;
   todayEthiopic = '';
+  planExistsDialog = false;
+  planExistsWithOptions: Plan | null = null;
+  deleting = false;
 
   currentStep = 0;
   readonly steps = STEPS;
@@ -62,29 +65,21 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
     this._initForms();
     this.planService.list().subscribe({
       next: res => {
-        const editablePlan = res.results.find(
-          p => p.status === 'draft' || p.status === 'returned'
-        );
-        if (editablePlan) {
-          this._loadPlan(editablePlan);
-        } else if (res.results.length > 0) {
-          this._loadPlan(res.results[0]);
+        const currentYearPlan = res.results.find(p => p.status === 'draft' || p.status === 'returned');
+        if (currentYearPlan) {
+          this._loadPlan(currentYearPlan);
         } else {
           this.planService.create().subscribe({
             next: plan => this._loadPlan(plan),
             error: (err) => {
-              const existing = err.error?.detail || err.error;
-              if (typeof existing === 'string' && existing.includes('አስቀድሞ ተፈጥሯል')) {
-                this.planService.list().subscribe({
-                  next: (r) => {
-                    if (r.results.length > 0) {
-                      this._loadPlan(r.results[0]);
-                    } else {
-                      this.loadError = true;
-                    }
-                  },
-                  error: () => { this.loadError = true; },
-                });
+              const detail = err.error?.detail || err.error;
+              if (typeof detail === 'string' && detail.includes('አስቀድሞ ተፈጥሯል')) {
+                if (res.results.length > 0) {
+                  this.planExistsWithOptions = res.results[0];
+                  this.planExistsDialog = true;
+                } else {
+                  this.loadError = true;
+                }
               } else {
                 this.loadError = true;
               }
@@ -390,6 +385,28 @@ export class PlanWizardComponent implements OnInit, OnDestroy {
       error: () => {
         this.toast.error('PDF ውርድ አልተሳካም');
         this.exportingPdf = false;
+      },
+    });
+  }
+
+  deleteAndCreateNew(): void {
+    if (!this.planExistsWithOptions) return;
+    this.deleting = true;
+    this.planService.delete(this.planExistsWithOptions.id).subscribe({
+      next: () => {
+        this.planExistsDialog = false;
+        this.deleting = false;
+        this.planService.create().subscribe({
+          next: plan => this._loadPlan(plan),
+          error: () => {
+            this.loadError = true;
+            this.cdr.markForCheck();
+          },
+        });
+      },
+      error: () => {
+        this.deleting = false;
+        this.toast.error('ሰርዝ አልተሳካም');
       },
     });
   }

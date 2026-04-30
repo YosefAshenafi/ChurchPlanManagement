@@ -208,6 +208,25 @@ const STATUS_CLASS: Record<string, string> = {
         </div>
       </div>
 
+      <!-- Admin actions panel -->
+      <div class="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
+        <h3 class="font-semibold text-slate-800 mb-1">አስተዳደር</h3>
+        <p class="text-slate-500 text-sm mb-4">ተጨማሪ እርምጥ የሚፈልጉትን ይምረጡ</p>
+        <div class="flex items-center gap-3 flex-wrap">
+          <button (click)="resetToDraft()" [disabled]="acting"
+            class="btn btn-outline border-amber-300 text-amber-600 hover:bg-amber-50 gap-2">
+            <span *ngIf="acting" class="loading loading-spinner loading-sm"></span>
+            <span *ngIf="!acting" class="material-icons text-base">replay</span>
+            ወደ ረቂቅ መልስ
+          </button>
+          <button (click)="confirmDelete()" [disabled]="acting"
+            class="btn btn-outline border-red-300 text-red-600 hover:bg-red-50 gap-2">
+            <span class="material-icons text-base">delete</span>
+            ሰርዝ
+          </button>
+        </div>
+      </div>
+
     </div>
   `,
 })
@@ -285,6 +304,39 @@ export class PlanReviewComponent implements OnInit {
       error: () => {
         this.toast.error('PDF ውርድ አልተሳካም');
         this.exportingPdf = false;
+      },
+    });
+  }
+
+  resetToDraft(): void {
+    if (!this.plan) return;
+    if (!confirm('ዕቅዱን ወደ ረቂቅ መልስ ይፈልጋሉ?')) return;
+    this.acting = true;
+    this.planService.resetToDraft(this.plan.id).subscribe({
+      next: p => {
+        this.plan = p;
+        this.acting = false;
+        this.toast.success('ዕቅዱ ወደ ረቂቅ ተመልሷል');
+      },
+      error: err => {
+        this.acting = false;
+        this.toast.error(err?.error?.detail ?? 'ስህተት ተከስቷል');
+      },
+    });
+  }
+
+  confirmDelete(): void {
+    if (!this.plan) return;
+    if (!confirm('ዕቅዱን በዚህ አንድ ሰርዝ? ይህ ተግባር ሊቀለበው አይችልም።')) return;
+    this.acting = true;
+    this.planService.delete(this.plan.id).subscribe({
+      next: () => {
+        this.toast.success('ዕቅዱ ተሰርዟል');
+        this.router.navigate(['/elder/plans']);
+      },
+      error: err => {
+        this.acting = false;
+        this.toast.error(err?.error?.detail ?? 'ስህተት ተከስቷል');
       },
     });
   }

@@ -161,7 +161,6 @@ const QUARTER_ICONS  = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
                          px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400">
             <option value="">ሁሉም ሁኔታ</option>
             <option value="submitted">ቀርቧል</option>
-            <option value="approved">ጸድቋል</option>
             <option value="returned">አስተያየት ቀርቧል</option>
             <option value="draft">ረቂቅ</option>
           </select>

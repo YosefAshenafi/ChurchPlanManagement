@@ -43,7 +43,7 @@ class PlanViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == "create":
             return [IsMinistryLeader()]
-        if self.action in ("approve", "return_plan"):
+        if self.action in ("approve", "return_plan", "reset_to_draft", "destroy"):
             return [IsAdminOrElder()]
         return super().get_permissions()
 
@@ -151,6 +151,28 @@ class PlanViewSet(ModelViewSet):
         logger.info("plan_returned", extra={"plan_id": plan.pk})
         return Response(PlanSerializer(plan).data)
 
+    @action(detail=True, methods=["post"], url_path="reset-to-draft", permission_classes=[IsAdminOrElder])
+    def reset_to_draft(self, request, pk=None):
+        plan = self.get_object()
+        if plan.status not in (PlanStatus.SUBMITTED, PlanStatus.APPROVED):
+            raise ValidationError("ጸድቆ ወይም ቀርቦ ያለ ዕቅድ ብቻ ሊታደስ ይችላል")
+        plan.status = PlanStatus.DRAFT
+        plan.submitted_at = None
+        plan.submitted_by = None
+        plan.reviewed_at = None
+        plan.reviewed_by = None
+        plan.review_comment = ''
+        plan.save(update_fields=["status", "submitted_at", "submitted_by", "reviewed_at", "reviewed_by", "review_comment"])
+        AuditLog.objects.create(
+            actor=request.user,
+            action=AuditLog.ACTION_PLAN_SAVE,
+            object_type="Plan",
+            object_id=plan.pk,
+            detail={"action": "reset_to_draft"},
+        )
+        logger.info("plan_reset_to_draft", extra={"plan_id": plan.pk})
+        return Response(PlanSerializer(plan).data)
+
     @action(detail=True, methods=["get"], url_path="export-pdf")
     def export_pdf(self, request, pk=None):
         plan = self.get_object()
@@ -174,3 +196,15 @@ class PlanViewSet(ModelViewSet):
             raise ValidationError(
                 "ቀርቦ ወይም ጸድቆ ያለ ዕቅድ ሊስተካከል አይችልም"
             )
+
+    def destroy(self, request, pk=None):
+        plan = self.get_object()
+        AuditLog.objects.create(
+            actor=request.user,
+            action=AuditLog.ACTION_PLAN_SAVE,
+            object_type="Plan",
+            object_id=plan.pk,
+            detail={"action": "deleted"},
+        )
+        plan.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

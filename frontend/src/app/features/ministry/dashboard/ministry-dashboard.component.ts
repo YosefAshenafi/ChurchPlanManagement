@@ -281,7 +281,15 @@ const QUARTER_ICONS  = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
                 <span class="material-icons text-base">edit</span>
                 ዕቅዱን ቀጥል
               </a>
-              <!-- View in Reports: for submitted/approved plans -->
+              <!-- New Plan: for submitted/approved plans -->
+              <button *ngIf="currentPlan.status==='submitted' || currentPlan.status==='approved'"
+                (click)="showNewPlanDialog = true"
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700
+                       text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
+                <span class="material-icons text-base">add</span>
+                አዲስ ዕቅድ
+              </button>
+              <!-- View Reports: for all plans -->
               <a routerLink="/ministry/reports"
                 class="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600
                        hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">
@@ -360,6 +368,43 @@ const QUARTER_ICONS  = ['looks_one', 'looks_two', 'looks_3', 'looks_4'];
       </div>
 
     </ng-container>
+
+    <!-- New Plan Dialog -->
+    <div *ngIf="showNewPlanDialog"
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+         (click)="showNewPlanDialog = false">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"
+           (click)="$event.stopPropagation()">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-icons text-blue-600 text-2xl">info</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">ዕቅድ አለዎት</h3>
+            <p class="text-sm text-slate-500">{{ currentPlan?.fiscal_year_label }} ዓ/ም</p>
+          </div>
+        </div>
+
+        <p class="text-slate-600 mb-6">
+          አሁን ያለው ዕቅድ <strong>{{ statusLabel(currentPlan!.status) }}</strong> ነው። አዲስ ዕቅድ ለመፍጠር ይሄውን ተጫን።
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button (click)="showNewPlanDialog = false"
+                  class="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600
+                         hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">
+            ተወው
+          </button>
+          <a routerLink="/ministry/plan"
+             (click)="showNewPlanDialog = false"
+             class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700
+                    text-white rounded-xl text-sm font-semibold transition-colors">
+            <span class="material-icons text-base">add</span>
+            አዲስ ዕቅድ ፍጠር
+          </a>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class MinistryDashboardComponent implements OnInit {
@@ -421,6 +466,8 @@ export class MinistryDashboardComponent implements OnInit {
   statusLabel(s: string): string { return STATUS_LABELS[s] ?? s; }
   statusClass(s: string): string { return STATUS_CLASSES[s] ?? ''; }
 
+  showNewPlanDialog = false;
+
   exportPlanPdf(): void {
     if (!this.currentPlan) return;
     this.exportingPdf = true;
@@ -434,6 +481,12 @@ export class MinistryDashboardComponent implements OnInit {
         this.exportingPdf = false;
       },
     });
+  }
+
+  goToPlan(createNew = false): void {
+    if (createNew) {
+      this.showNewPlanDialog = false;
+    }
   }
 
   private _downloadBlob(blob: Blob, filename: string): void {

@@ -38,6 +38,14 @@ export class PlanService {
     return this.http.post<Plan>(`${BASE}/${id}/return/`, { comment });
   }
 
+  resetToDraft(id: number): Observable<Plan> {
+    return this.http.post<Plan>(`${BASE}/${id}/reset-to-draft/`, {});
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${BASE}/${id}/`);
+  }
+
   exportPdf(id: number): Observable<Blob> {
     return this.http.get(`${BASE}/${id}/export-pdf/`, { responseType: 'blob' });
   }
