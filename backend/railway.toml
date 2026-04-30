@@ -3,8 +3,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-# Run gunicorn on port 8080 (Railway's default)
-startCommand = "gunicorn config.wsgi:application --bind 0.0.0.0:8080 --workers 1 --log-level debug"
+# Listen on Railway's PORT (supports your port 99)
+startCommand = "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers 1 --log-level debug"
 healthcheckPath = "/api/health/"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
