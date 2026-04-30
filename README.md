@@ -275,3 +275,4 @@ Then log in to `/admin/` and create ministries, fiscal years, and user accounts 
 ## Notes
 
 - Multi-church / multi-tenant support is out of scope for this release.
+# Force cache invalidation Thu Apr 30 08:59:11 EAT 2026
