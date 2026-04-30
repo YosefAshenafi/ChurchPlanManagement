@@ -34,6 +34,9 @@ class Command(BaseCommand):
     help = "Seed production users (admin, elders, leaders) and ministries. Idempotent."
 
     def handle(self, *args, **options):
+        self.stdout.write(f"  Admin username from env: {DEFAULT_ADMIN_USERNAME}")
+        self.stdout.write(f"  Admin email from env: {DEFAULT_ADMIN_EMAIL}")
+        self.stdout.write(f"  Password from env: {'SET' if DEFAULT_ADMIN_PASSWORD else 'NOT SET'}")
         self._create_default_admin()
         ministries = self._create_ministries()
         self._create_elders()
