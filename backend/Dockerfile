@@ -11,12 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-core \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/
-RUN pip install -r requirements.txt
+COPY backend/requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
 
-COPY . /app/
+COPY backend/ /app/
 
-RUN chmod +x start.sh
+RUN chmod +x /app/start.sh
 
 EXPOSE 8080
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "1"]
