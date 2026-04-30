@@ -1,16 +1,14 @@
 #!/bin/sh
 
-echo "=== Environment ==="
-echo "PORT: ${PORT:-8080}"
-echo "DATABASE_URL set: $(if [ -n "$DATABASE_URL" ]; then echo 'YES'; else echo 'NO'; fi)"
-echo "DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-not set}"
+# Set Django settings
+export DJANGO_SETTINGS_MODULE=config.settings
 
-echo "=== Testing Django setup ==="
-python -c "import django; print(f'Django version: {django.__version__}')" || echo "Django import FAILED"
+echo "=== Starting Django with settings: $DJANGO_SETTINGS_MODULE ==="
 
-echo "=== Running migrations ==="
-python manage.py migrate --noinput || echo "Migrations FAILED"
+# Run migrations
+python manage.py migrate --noinput
 
+# Start gunicorn
 echo "=== Starting gunicorn on 0.0.0.0:${PORT:-8080} ==="
 exec gunicorn config.wsgi:application \
   --bind "0.0.0.0:${PORT:-8080}" \
