@@ -3,40 +3,14 @@ set -e
 
 echo "=== Starting Django setup ==="
 echo "PORT: ${PORT:-8001}"
-echo "DATABASE_URL set: $(if [ -n "$DATABASE_URL" ]; then echo 'YES'; else echo 'NO'; fi)"
-
-# Wait for database to be ready
-echo "Waiting for database..."
-python -c "
-import os, time, psycopg
-from urllib.parse import urlparse
-
-url = urlparse(os.environ.get('DATABASE_URL', ''))
-if url.hostname:
-    for i in range(30):
-        try:
-            conn = psycopg.connect(
-                host=url.hostname,
-                port=url.port or 5432,
-                user=url.username,
-                password=url.password,
-                dbname=url.path.lstrip('/'),
-                connect_timeout=2
-            )
-            conn.close()
-            print('  Database is ready!')
-            break
-        except Exception as e:
-            print(f'  Attempt {i+1}/30: {e}')
-            time.sleep(2)
-    else:
-        print('  ERROR: Database not ready after 30 attempts')
-        exit(1)
-"
 
 # Run migrations
 echo "=== Running migrations ==="
-python manage.py migrate --noinput --verbosity 2
+python manage.py migrate --noinput
+
+# Collect static files
+echo "=== Collecting static files ==="
+python manage.py collectstatic --noinput
 
 # Seed users (creates/updates default admin)
 echo "=== Running seed_users ==="
