@@ -17,7 +17,13 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["*"])
 
 # Railway sends healthcheck requests with Host: healthcheck.railway.app and
 # routes public traffic via $RAILWAY_PUBLIC_DOMAIN. Always trust those.
-_RAILWAY_HOSTS = ["healthcheck.railway.app"]
+_RAILWAY_HOSTS = [
+    "healthcheck.railway.app",
+    ".railway.app",
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+]
 for _var in ("RAILWAY_PUBLIC_DOMAIN", "RAILWAY_PRIVATE_DOMAIN", "RAILWAY_STATIC_URL"):
     _val = env(_var, default="")
     if _val:

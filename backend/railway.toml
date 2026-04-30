@@ -3,6 +3,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
+preDeployCommand = "python manage.py migrate --noinput"
 startCommand = "/app/start.sh"
 healthcheckPath = "/api/health/"
 healthcheckTimeout = 300
