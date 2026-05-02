@@ -14,7 +14,7 @@ docker compose up --build
 ```
 
 That single command will:
-1. Start PostgreSQL (port 5433)
+1. Start MySQL (port 3306)
 2. Run Django migrations
 3. Seed demo data — admin, elders, 5 ministries, prior-year approved plans
 4. Start the Django REST API on **http://localhost:8001**
@@ -31,7 +31,7 @@ Open **http://localhost:4300** in your browser.
 | Angular UI | http://localhost:4300 | Main application |
 | Django API | http://localhost:8001 | REST API + Django admin |
 | Django Admin | http://localhost:8001/admin/ | Login with `admin` / `Admin1234!` |
-| PostgreSQL | localhost:5432 | DB `plansys`, user `plansys` |
+| MySQL | localhost:3306 | DB `plansys`, user `plansys` |
 
 ---
 
@@ -98,7 +98,7 @@ PlanManagementSystem/
 │       ├── ministries/      # Ministry, FiscalYear, ReportWindow models
 │       ├── plans/           # Plan + Goals + Outputs + Activities + Budget + Schedule
 │       ├── reports/         # QuarterlyReport + activity progress + budget utilization
-│       ├── documents/       # File upload/download via Cloudinary
+│       ├── documents/       # File upload/download to local storage
 │       └── audit/           # Immutable audit log for all state transitions
 └── frontend/                # Angular 18 standalone components + Angular Material
     └── src/app/
@@ -137,7 +137,7 @@ Base URL: `http://localhost:8001/api`
 | GET/POST | `/users/` | Admin | List / create users |
 | POST | `/users/{id}/reset-password/` | Admin | Reset a user's password |
 | POST | `/documents/upload/` | Ministry Leader | Upload file (multipart) |
-| GET | `/documents/{id}/download/` | All | Get presigned download URL |
+| GET | `/documents/{id}/download/` | All | Get document download URL |
 
 ---
 
@@ -158,13 +158,13 @@ Tests cover: JWT auth, plan create/save/submit lifecycle, elder approve/return, 
 | `DJANGO_SECRET_KEY` | *(required)* | Django secret key — change in production |
 | `DJANGO_DEBUG` | `1` | Set to `0` in production |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,...` | Comma-separated allowed hosts |
-| `POSTGRES_DB` | `plansys` | PostgreSQL database name |
-| `POSTGRES_USER` | `plansys` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | `plansys` | PostgreSQL password |
-| `CLOUDINARY_CLOUD_NAME` | *(required)* | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | *(required)* | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | *(required)* | Cloudinary API secret |
-| `CLOUDINARY_FOLDER` | `plansys-docs` | Folder for uploaded documents |
+| `DB_TYPE` | `mysql` | `mysql`, `postgres`, or `sqlite` |
+| `MYSQL_DATABASE` | `plansys` | MySQL database name |
+| `MYSQL_USER` | `plansys` | MySQL username |
+| `MYSQL_PASSWORD` | `plansys` | MySQL password |
+| `MYSQL_HOST` | `localhost` | MySQL host |
+| `MYSQL_PORT` | `3306` | MySQL port |
+| `DOCUMENT_STORAGE_PATH` | `media/documents` | Local path for uploaded files |
 | `JWT_ACCESS_LIFETIME_MINUTES` | `60` | Access token lifetime |
 | `JWT_REFRESH_LIFETIME_DAYS` | `7` | Refresh token lifetime |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:4300` | Allowed CORS origins |
@@ -175,96 +175,73 @@ Tests cover: JWT auth, plan create/save/submit lifecycle, elder approve/return, 
 
 - **PDF export** — Plans and reports can be downloaded as PDF via the "PDF ውርድ" button. The server generates the PDF with ReportLab; the browser downloads it automatically.
 - **Email notifications** — Django email backend is wired to plan/report lifecycle events (submit, approve, return). Configure SMTP via `.env` (see Environment Variables). In development the console backend logs emails to stdout; set `EMAIL_NOTIFICATIONS_ENABLED=1` to activate delivery.
-- **Extended document URLs** — Presigned Cloudinary download URLs now default to 7 days (configurable via `DOCUMENT_URL_EXPIRY` in `.env`).
+- **Extended document URLs** — Document URLs now default to 7 days (configurable via `DOCUMENT_URL_EXPIRY` in `.env`).
 - **Ethiopian Ge'ez calendar** — Today's date is displayed in the Ethiopic calendar (e.g. "19 ሚያዚያ 2018") on the ministry dashboard and plan/report wizard headers.
 - **Mobile responsive** — All three portals (Ministry, Elder, Admin) feature a collapsible sidebar with a hamburger menu on small screens. Tables scroll horizontally on narrow viewports. Wizard step indicators adapt to mobile with a progress bar and prev/next controls.
 
 ---
 
-## Deploying to Production (Vercel + Railway)
+## Deploying to PythonAnywhere
 
-The recommended production stack is **Vercel** (Angular frontend) + **Railway** (Django backend + PostgreSQL + file storage).
+PythonAnywhere provides PostgreSQL (or MySQL), static files, and email out of the box.
 
-### 1. Backend — Railway
+### 1. Create PythonAnywhere account
 
-#### a. Create a Railway project and add services
+1. Sign up at [pythonanywhere.com](https://pythonanywhere.com)
+2. Go to the **Databases** tab and set up your MySQL database:
+   - Create a database (e.g., `yourusername$plansys`)
+   - Create a user with access to that database
 
-1. Go to [railway.app](https://railway.app) → **New Project**
-2. Click **Deploy from GitHub repo** → select this repository → set **Root Directory** to `backend`
-3. Railway auto-detects the `Dockerfile` and builds with gunicorn (`start.sh`)
-4. In the same project, click **+ New** → **Database** → **Add PostgreSQL** — Railway injects `DATABASE_URL` automatically
+### 2. Upload the backend code
 
-#### b. File storage
+1. Go to **Files** → upload the `backend/` folder
+2. Open a **Bash console** and install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-**Cloudinary** (recommended for production):
-- Create a free Cloudinary account at [cloudinary.com](https://cloudinary.com)
-- Get your cloud name, API key, and API secret from the dashboard
-- Add these as environment variables below
+### 3. Configure environment variables
 
-The app uses the Cloudinary SDK — no additional configuration needed.
+Go to **Web** → add the following to the WSGI configuration file:
 
-#### c. Environment variables for the Railway backend service
-
-Set these in the Railway service's **Variables** tab:
-
-| Variable | Value |
-|---|---|
-| `DJANGO_SECRET_KEY` | A long random string |
-| `DJANGO_DEBUG` | `0` |
-| `DJANGO_ALLOWED_HOSTS` | `yourapp.up.railway.app` |
-| `DATABASE_URL` | Auto-injected by Railway PostgreSQL plugin |
-| `CORS_ALLOWED_ORIGINS` | `https://your-vercel-app.vercel.app` |
-| `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | Your Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | Your Cloudinary API secret |
-| `CLOUDINARY_FOLDER` | `plansys-docs` (optional) |
-| `EMAIL_NOTIFICATIONS_ENABLED` | `1` (optional) |
-| `EMAIL_HOST` | Your SMTP host (e.g. `smtp.sendgrid.net`) |
-| `EMAIL_HOST_USER` | SMTP username |
-| `EMAIL_HOST_PASSWORD` | SMTP password |
-| `DEFAULT_FROM_EMAIL` | `noreply@yourdomain.com` |
-| `GUNICORN_WORKERS` | `2` (increase for higher traffic) |
-
-After deploying, note the public Railway URL (e.g. `https://myapp.up.railway.app`).
-
----
-
-### 2. Frontend — Vercel
-
-#### a. Create a Vercel project
-
-1. Go to [vercel.com](https://vercel.com) → **New Project** → import this repository
-2. Set **Root Directory** to `frontend`
-3. Vercel picks up `vercel.json` automatically — no framework preset needed
-
-#### b. Environment variable for the Vercel project
-
-In the Vercel project **Settings → Environment Variables**, add:
-
-| Variable | Value |
-|---|---|
-| `API_BASE_URL` | `https://myapp.up.railway.app/api` (your Railway backend URL) |
-
-#### c. Deploy
-
-Click **Deploy**. Vercel runs:
+```python
+import os
+os.environ['DJANGO_SECRET_KEY'] = 'your-secret-key'
+os.environ['DJANGO_DEBUG'] = '0'
+os.environ['DJANGO_ALLOWED_HOSTS'] = 'yourusername.pythonanywhere.com'
+os.environ['DB_TYPE'] = 'mysql'
+os.environ['MYSQL_DATABASE'] = 'yourusername$plansys'
+os.environ['MYSQL_USER'] = 'yourusername'
+os.environ['MYSQL_PASSWORD'] = 'your-mysql-password'
+os.environ['MYSQL_HOST'] = 'yourusername.mysql.pythonanywhere.com'
+os.environ['MYSQL_PORT'] = '3306'
+os.environ['DOCUMENT_STORAGE_PATH'] = '/home/yourusername/planmanagement/media/documents'
+os.environ['CORS_ALLOWED_ORIGINS'] = 'https://yourusername.pythonanywhere.com'
 ```
-sed -i "s|__API_BASE_URL__|$API_BASE_URL|g" src/environments/environment.prod.ts && npm run build
-```
-then serves `dist/plan-management-system/browser/` with SPA rewrites so Angular routing works on hard refresh.
 
----
+### 4. Run migrations
 
-### 3. First-run seeding (Railway)
-
-The production backend does **not** auto-seed demo data (`seed_demo` is local-only). After deploy:
-
+In the Bash console:
 ```bash
-# Open a Railway shell for the backend service
-railway run python manage.py createsuperuser
+cd ~/planmanagement
+python manage.py migrate
+python manage.py createsuperuser
 ```
 
-Then log in to `/admin/` and create ministries, fiscal years, and user accounts through the Django admin or the app's admin portal.
+### 5. Configure static and media files
+
+In the **Web** tab:
+- Static files: `/static/` → `/home/yourusername/planmanagement/static/`
+- Media files: `/media/` → `/home/yourusername/planmanagement/media/`
+
+### 6. Optional: Deploy the Angular frontend
+
+1. Build the Angular app locally:
+   ```bash
+   cd frontend && npm run build
+   ```
+2. Upload the `dist/` folder to PythonAnywhere
+3. Configure the web app to serve from that directory
 
 ---
 

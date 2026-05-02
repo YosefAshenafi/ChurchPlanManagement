@@ -21,6 +21,7 @@ services:
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings
+      DB_TYPE: postgres
       DATABASE_URL: postgres://${POSTGRES_USER:-plansys}:${POSTGRES_PASSWORD:-plansys}@db:5432/${POSTGRES_DB:-plansys}
     depends_on:
       db:

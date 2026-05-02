@@ -6,6 +6,13 @@ import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Use PyMySQL for MySQL connections
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except Exception:
+    pass
+
 env = environ.Env(
     DJANGO_DEBUG=(bool, True),
 )
@@ -90,12 +97,37 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASES = {
-    "default": env.db_url(
-        "DATABASE_URL",
-        default="postgres://plansys:plansys@db:5432/plansys",
-    )
-}
+# Database: supports mysql, postgres, or sqlite
+_db_type = env("DB_TYPE", default="sqlite")
+
+if _db_type == "postgres":
+    DATABASES = {
+        "default": env.db_url(
+            "DATABASE_URL",
+            default="postgres://plansys:plansys@db:5432/plansys",
+        )
+    }
+elif _db_type == "mysql":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": env("MYSQL_DATABASE", default="plansys"),
+            "USER": env("MYSQL_USER", default="plansys"),
+            "PASSWORD": env("MYSQL_PASSWORD", default="plansys"),
+            "HOST": env("MYSQL_HOST", default="localhost"),
+            "PORT": env("MYSQL_PORT", default="3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
+    }
+else:  # sqlite (default for local dev)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -157,11 +189,8 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 CORS_ALLOW_CREDENTIALS = True
 
-# Cloudinary configuration
-CLOUDINARY_CLOUD_NAME = env("CLOUDINARY_CLOUD_NAME", default="")
-CLOUDINARY_API_KEY = env("CLOUDINARY_API_KEY", default="")
-CLOUDINARY_API_SECRET = env("CLOUDINARY_API_SECRET", default="")
-CLOUDINARY_FOLDER = env("CLOUDINARY_FOLDER", default="plansys-docs")
+# Local file storage for documents
+DOCUMENT_STORAGE_PATH = env("DOCUMENT_STORAGE_PATH", default=str(BASE_DIR / "media" / "documents"))
 
 LOGGING = {
     "version": 1,
