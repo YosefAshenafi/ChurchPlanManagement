@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('original_name', models.CharField(max_length=512)),
-                ('storage_key', models.CharField(help_text='S3/MinIO object key', max_length=1024)),
+                ('storage_key', models.CharField(help_text='Cloudinary public_id', max_length=1024)),
                 ('content_type', models.CharField(max_length=128)),
                 ('size_bytes', models.PositiveBigIntegerField()),
                 ('description', models.CharField(blank=True, help_text='ሰነዱ መግለጫ በአማርኛ', max_length=512)),

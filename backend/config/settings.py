@@ -157,12 +157,11 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 CORS_ALLOW_CREDENTIALS = True
 
-# MinIO / S3-compatible object storage
-MINIO_ENDPOINT = env("MINIO_ENDPOINT", default="minio:9000")
-MINIO_ACCESS_KEY = env("MINIO_ACCESS_KEY", default="minioadmin")
-MINIO_SECRET_KEY = env("MINIO_SECRET_KEY", default="minioadmin")
-MINIO_BUCKET = env("MINIO_BUCKET", default="plansys-docs")
-MINIO_SECURE = env.bool("MINIO_SECURE", default=False)
+# Cloudinary configuration
+CLOUDINARY_CLOUD_NAME = env("CLOUDINARY_CLOUD_NAME", default="")
+CLOUDINARY_API_KEY = env("CLOUDINARY_API_KEY", default="")
+CLOUDINARY_API_SECRET = env("CLOUDINARY_API_SECRET", default="")
+CLOUDINARY_FOLDER = env("CLOUDINARY_FOLDER", default="plansys-docs")
 
 LOGGING = {
     "version": 1,

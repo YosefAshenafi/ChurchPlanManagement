@@ -15,11 +15,10 @@ docker compose up --build
 
 That single command will:
 1. Start PostgreSQL (port 5433)
-2. Start MinIO object storage (port 9000)
-3. Run Django migrations
-4. Seed demo data — admin, elders, 5 ministries, prior-year approved plans
-5. Start the Django REST API on **http://localhost:8001**
-6. Start the Angular UI on **http://localhost:4300**
+2. Run Django migrations
+3. Seed demo data — admin, elders, 5 ministries, prior-year approved plans
+4. Start the Django REST API on **http://localhost:8001**
+5. Start the Angular UI on **http://localhost:4300**
 
 Open **http://localhost:4300** in your browser.
 
@@ -32,7 +31,6 @@ Open **http://localhost:4300** in your browser.
 | Angular UI | http://localhost:4300 | Main application |
 | Django API | http://localhost:8001 | REST API + Django admin |
 | Django Admin | http://localhost:8001/admin/ | Login with `admin` / `Admin1234!` |
-| MinIO Console | http://localhost:9001 | Object storage UI (`minioadmin` / `minioadmin`) |
 | PostgreSQL | localhost:5432 | DB `plansys`, user `plansys` |
 
 ---
@@ -100,7 +98,7 @@ PlanManagementSystem/
 │       ├── ministries/      # Ministry, FiscalYear, ReportWindow models
 │       ├── plans/           # Plan + Goals + Outputs + Activities + Budget + Schedule
 │       ├── reports/         # QuarterlyReport + activity progress + budget utilization
-│       ├── documents/       # File upload/download via MinIO
+│       ├── documents/       # File upload/download via Cloudinary
 │       └── audit/           # Immutable audit log for all state transitions
 └── frontend/                # Angular 18 standalone components + Angular Material
     └── src/app/
@@ -163,9 +161,10 @@ Tests cover: JWT auth, plan create/save/submit lifecycle, elder approve/return, 
 | `POSTGRES_DB` | `plansys` | PostgreSQL database name |
 | `POSTGRES_USER` | `plansys` | PostgreSQL username |
 | `POSTGRES_PASSWORD` | `plansys` | PostgreSQL password |
-| `MINIO_ROOT_USER` | `minioadmin` | MinIO access key |
-| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO secret key |
-| `MINIO_BUCKET` | `plansys-docs` | Bucket name for uploaded documents |
+| `CLOUDINARY_CLOUD_NAME` | *(required)* | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | *(required)* | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | *(required)* | Cloudinary API secret |
+| `CLOUDINARY_FOLDER` | `plansys-docs` | Folder for uploaded documents |
 | `JWT_ACCESS_LIFETIME_MINUTES` | `60` | Access token lifetime |
 | `JWT_REFRESH_LIFETIME_DAYS` | `7` | Refresh token lifetime |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:4300` | Allowed CORS origins |
@@ -176,7 +175,7 @@ Tests cover: JWT auth, plan create/save/submit lifecycle, elder approve/return, 
 
 - **PDF export** — Plans and reports can be downloaded as PDF via the "PDF ውርድ" button. The server generates the PDF with ReportLab; the browser downloads it automatically.
 - **Email notifications** — Django email backend is wired to plan/report lifecycle events (submit, approve, return). Configure SMTP via `.env` (see Environment Variables). In development the console backend logs emails to stdout; set `EMAIL_NOTIFICATIONS_ENABLED=1` to activate delivery.
-- **Extended document URLs** — Presigned MinIO download URLs now default to 7 days (configurable via `DOCUMENT_URL_EXPIRY` in `.env`).
+- **Extended document URLs** — Presigned Cloudinary download URLs now default to 7 days (configurable via `DOCUMENT_URL_EXPIRY` in `.env`).
 - **Ethiopian Ge'ez calendar** — Today's date is displayed in the Ethiopic calendar (e.g. "19 ሚያዚያ 2018") on the ministry dashboard and plan/report wizard headers.
 - **Mobile responsive** — All three portals (Ministry, Elder, Admin) feature a collapsible sidebar with a hamburger menu on small screens. Tables scroll horizontally on narrow viewports. Wizard step indicators adapt to mobile with a progress bar and prev/next controls.
 
@@ -197,14 +196,12 @@ The recommended production stack is **Vercel** (Angular frontend) + **Railway** 
 
 #### b. File storage
 
-Option 1 — **MinIO on Railway** (keep parity with local dev):
-- Click **+ New** → **Docker Image** → `minio/minio`
-- Set env vars `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, add a persistent volume at `/data`
-- Set startup command: `server /data --console-address :9001`
+**Cloudinary** (recommended for production):
+- Create a free Cloudinary account at [cloudinary.com](https://cloudinary.com)
+- Get your cloud name, API key, and API secret from the dashboard
+- Add these as environment variables below
 
-Option 2 — **Cloudflare R2** or **AWS S3** (recommended for production):
-- Create a bucket and generate S3-compatible credentials
-- The MinIO client in `apps/documents/storage.py` is S3-compatible — just point it at the new endpoint
+The app uses the Cloudinary SDK — no additional configuration needed.
 
 #### c. Environment variables for the Railway backend service
 
@@ -217,11 +214,10 @@ Set these in the Railway service's **Variables** tab:
 | `DJANGO_ALLOWED_HOSTS` | `yourapp.up.railway.app` |
 | `DATABASE_URL` | Auto-injected by Railway PostgreSQL plugin |
 | `CORS_ALLOWED_ORIGINS` | `https://your-vercel-app.vercel.app` |
-| `MINIO_ENDPOINT` | Your MinIO or S3 endpoint (e.g. `your-bucket.r2.cloudflarestorage.com`) |
-| `MINIO_ACCESS_KEY` | Bucket access key |
-| `MINIO_SECRET_KEY` | Bucket secret key |
-| `MINIO_BUCKET` | Bucket name |
-| `MINIO_SECURE` | `1` (always true for cloud storage) |
+| `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Your Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Your Cloudinary API secret |
+| `CLOUDINARY_FOLDER` | `plansys-docs` (optional) |
 | `EMAIL_NOTIFICATIONS_ENABLED` | `1` (optional) |
 | `EMAIL_HOST` | Your SMTP host (e.g. `smtp.sendgrid.net`) |
 | `EMAIL_HOST_USER` | SMTP username |

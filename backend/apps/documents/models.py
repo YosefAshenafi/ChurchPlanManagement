@@ -20,7 +20,7 @@ class AttachedDocument(models.Model):
     )
     original_name = models.CharField(max_length=512)
     storage_key = models.CharField(
-        max_length=1024, help_text="S3/MinIO object key"
+        max_length=1024, help_text="Cloudinary public_id"
     )
     content_type = models.CharField(max_length=128)
     size_bytes = models.PositiveBigIntegerField()
